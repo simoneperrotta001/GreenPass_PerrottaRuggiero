@@ -1,7 +1,7 @@
 #include "serverG.h"
 
 int main (int argc, char * argv[]) {
-    int serverV_SocketFileDescriptor, listenFileDescriptor, connectionFileDescriptor, enable = TRUE;
+    int serverV_SFD, listenFileDescriptor, connectionFileDescriptor, enable = TRUE;
     struct sockaddr_in client, serverG_Address;
     unsigned short int serverG_Port, requestIdentifier;
     pid_t childPid;
@@ -42,17 +42,17 @@ int main (int argc, char * argv[]) {
             // Processo figlio che chiude il FD realtivo "all'ascolto" delle nuove connessioni in arrivo per il ServerG
             wclose(listenFileDescriptor);
             // Richiesta di instaurare una connessione con il ServerV
-            serverV_SocketFileDescriptor = createConnectionWithServerV(percorsoFileConfigurazioneServerG);
+            serverV_SFD = createConnectionWithServerV(percorsoFileConfigurazioneServerG);
             
             // Controllo dell'ID del mittente (ClientS o ClientT).
             switch (requestIdentifier) {
                 // ClientS
                 case clientS_viaServerG_Sender:
-                    clientS_RequestHandler(connectionFileDescriptor, serverV_SocketFileDescriptor);
+                    clientS_RequestHandler(connectionFileDescriptor, serverV_SFD);
                     break;
                 // ClientT
                 case clientT_viaServerG_Sender:
-                    clientT_RequestHandler(connectionFileDescriptor, serverV_SocketFileDescriptor);
+                    clientT_RequestHandler(connectionFileDescriptor, serverV_SFD);
                     break;
                 // ID sconosciuto
                 default:
@@ -61,7 +61,7 @@ int main (int argc, char * argv[]) {
             }
             
             wclose(connectionFileDescriptor);
-            wclose(serverV_SocketFileDescriptor);
+            wclose(serverV_SFD);
             exit(0);
         }
         // Padre che chiude il socket file descriptor che realizza la connessione con il ClientCitizen collegatosi.
@@ -74,7 +74,7 @@ Procedura per la gestione del servizio con un ClientS. I paraetri di ingresso so
 descriptor col quale è possibile comunicare con un ClientS o un ClientT e il socket file descriptor col
 quale è possibile comunicare con il ServerV.
 */
-void clientS_RequestHandler (int connectionFileDescriptor, int serverV_SocketFileDescriptor) {
+void clientS_RequestHandler (int connectionFileDescriptor, int serverV_SFD) {
     char codiceTesseraSanitaria[LUNGHEZZA_CODICE_TESSERA_SANITARIA];
     ssize_t fullWriteReturnValue, fullReadReturnValue;
     unsigned short int clientS_viaServerG_SenderID = clientS_viaServerG_Sender;
@@ -88,10 +88,10 @@ void clientS_RequestHandler (int connectionFileDescriptor, int serverV_SocketFil
     // fullRead per leggere il codice della tessera sanitaria.
     if ((fullReadReturnValue = fullRead(connectionFileDescriptor, (void *) codiceTesseraSanitaria, sizeof(char) * LUNGHEZZA_CODICE_TESSERA_SANITARIA)) != 0) raiseError(FULL_READ_SCOPE, (int) fullReadReturnValue);
     // fullWrite per scrivere e inviare l'ID del Client e il suo codice di tessera sanitaria nel pacchetto da inviare al ServerV.
-    if ((fullWriteReturnValue = fullWrite(serverV_SocketFileDescriptor, (const void *) & clientS_viaServerG_SenderID, sizeof(clientS_viaServerG_SenderID))) != 0) raiseError(FULL_WRITE_SCOPE, (int) fullWriteReturnValue);
-    if ((fullWriteReturnValue = fullWrite(serverV_SocketFileDescriptor, (const void *) codiceTesseraSanitaria, sizeof(char) * LUNGHEZZA_CODICE_TESSERA_SANITARIA)) != 0) raiseError(FULL_WRITE_SCOPE, (int) fullWriteReturnValue);
+    if ((fullWriteReturnValue = fullWrite(serverV_SFD, (const void *) & clientS_viaServerG_SenderID, sizeof(clientS_viaServerG_SenderID))) != 0) raiseError(FULL_WRITE_SCOPE, (int) fullWriteReturnValue);
+    if ((fullWriteReturnValue = fullWrite(serverV_SFD, (const void *) codiceTesseraSanitaria, sizeof(char) * LUNGHEZZA_CODICE_TESSERA_SANITARIA)) != 0) raiseError(FULL_WRITE_SCOPE, (int) fullWriteReturnValue);
     // fullRead per attendere in lettura il pacchetto di risposta da parte del ServerV.
-    if ((fullReadReturnValue = fullRead(serverV_SocketFileDescriptor, (void *) newServerV_Reply, sizeof(* newServerV_Reply))) != 0) raiseError(FULL_READ_SCOPE, (int) fullReadReturnValue);
+    if ((fullReadReturnValue = fullRead(serverV_SFD, (void *) newServerV_Reply, sizeof(* newServerV_Reply))) != 0) raiseError(FULL_READ_SCOPE, (int) fullReadReturnValue);
     
     
     // Copia dei parametri del pacchetto di risposta del ServerV nel pacchetto da inviare al ClientS
@@ -103,7 +103,7 @@ void clientS_RequestHandler (int connectionFileDescriptor, int serverV_SocketFil
     free(newServerG_Reply);
 }
 
-void clientT_RequestHandler (int connectionFileDescriptor, int serverV_SocketFileDescriptor) {
+void clientT_RequestHandler (int connectionFileDescriptor, int serverV_SFD) {
     unsigned short int clientT_viaServerG_SenderID = clientT_viaServerG_Sender;
     ssize_t fullWriteReturnValue, fullReadReturnValue;
     
@@ -125,10 +125,10 @@ void clientT_RequestHandler (int connectionFileDescriptor, int serverV_SocketFil
     strncpy((char *) newServerG_Request->codiceTesseraSanitaria, (const char *) newClientT_Request->codiceTesseraSanitaria, LUNGHEZZA_CODICE_TESSERA_SANITARIA);
     newServerG_Request->updateValue = newClientT_Request->updateValue;
     // fullWrite per scrivere e inviare al ServerV ID e richiesta al ServerV
-    if ((fullWriteReturnValue = fullWrite(serverV_SocketFileDescriptor, (const void *) & clientT_viaServerG_SenderID, sizeof(clientT_viaServerG_SenderID))) != 0) raiseError(FULL_WRITE_SCOPE, (int) fullWriteReturnValue);
-    if ((fullWriteReturnValue = fullWrite(serverV_SocketFileDescriptor, (const void *) newServerG_Request, sizeof(* newServerG_Request))) != 0) raiseError(FULL_WRITE_SCOPE, (int) fullWriteReturnValue);
+    if ((fullWriteReturnValue = fullWrite(serverV_SFD, (const void *) & clientT_viaServerG_SenderID, sizeof(clientT_viaServerG_SenderID))) != 0) raiseError(FULL_WRITE_SCOPE, (int) fullWriteReturnValue);
+    if ((fullWriteReturnValue = fullWrite(serverV_SFD, (const void *) newServerG_Request, sizeof(* newServerG_Request))) != 0) raiseError(FULL_WRITE_SCOPE, (int) fullWriteReturnValue);
     // fullRead per attendere e leggere la risposta dal ServerV
-    if ((fullReadReturnValue = fullRead(serverV_SocketFileDescriptor, (void *) newServerV_Reply, sizeof(* newServerV_Reply))) != 0) raiseError(FULL_READ_SCOPE, (int) fullReadReturnValue);
+    if ((fullReadReturnValue = fullRead(serverV_SFD, (void *) newServerV_Reply, sizeof(* newServerV_Reply))) != 0) raiseError(FULL_READ_SCOPE, (int) fullReadReturnValue);
     
     strncpy((char *) newServerG_Reply->codiceTesseraSanitaria, (const char *) newServerV_Reply->codiceTesseraSanitaria, LUNGHEZZA_CODICE_TESSERA_SANITARIA);
     newServerG_Reply->updateResult = newServerV_Reply->updateResult;

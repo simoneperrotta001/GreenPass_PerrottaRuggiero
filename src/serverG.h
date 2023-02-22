@@ -11,7 +11,7 @@
 
 const char * messaggioAtteso = "<ServerG Port>", * percorsoFileConfigurazioneServerG = "../conf/serverG.conf";
 
-void clientS_RequestHandler     (int connectionFileDescriptor, int serverV_SocketFileDescriptor);
-void clientT_RequestHandler     (int connectionFileDescriptor, int serverV_SocketFileDescriptor);
+void clientS_RequestHandler     (int connectionFileDescriptor, int serverV_SFD);
+void clientT_RequestHandler     (int connectionFileDescriptor, int serverV_SFD);
 
 #endif /* serverG_h */

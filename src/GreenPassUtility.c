@@ -78,17 +78,17 @@ int createConnectionWithServerV (const char * percorsoFileConfigurazione) {
     struct sockaddr_in serverV_Address;
     char * stringServerV_AddressIP = NULL;
     unsigned short int serverV_Port;
-    int serverV_SocketFileDescriptor;
+    int serverV_SFD;
     
     // Effettivo "retrieve" del file di configurazione
     retrieveConfigurationData(percorsoFileConfigurazione, & stringServerV_AddressIP, & serverV_Port);
     // Si imposta la comunicazione col serverV
-    serverV_SocketFileDescriptor = wsocket(AF_INET, SOCK_STREAM, 0);
+    serverV_SFD = wsocket(AF_INET, SOCK_STREAM, 0);
     memset((void *) & serverV_Address, 0, sizeof(serverV_Address));
     serverV_Address.sin_family = AF_INET;
     serverV_Address.sin_port   = htons(serverV_Port);
     if (inet_pton(AF_INET, (const char * restrict) stringServerV_AddressIP, (void *) & serverV_Address.sin_addr) <= 0) raiseError(INET_PTON_SCOPE, INET_PTON_ERROR);
-    wconnect(serverV_SocketFileDescriptor, (struct sockaddr *) & serverV_Address, (socklen_t) sizeof(serverV_Address));
+    wconnect(serverV_SFD, (struct sockaddr *) & serverV_Address, (socklen_t) sizeof(serverV_Address));
     free(stringServerV_AddressIP);
-    return serverV_SocketFileDescriptor;
+    return serverV_SFD;
 }
