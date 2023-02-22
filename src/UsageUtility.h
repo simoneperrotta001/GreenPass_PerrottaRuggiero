@@ -106,7 +106,7 @@
 
 enum boolean        { FALSE, TRUE };
 
-void        checkUsage          (int argc,              const char * argv[],    int expected_argc, const char * expectedUsageMessage);
+void        checkUsage          (int argc,              const char * argv[],    int expected_argc, const char * messaggioAtteso);
 void        raiseError          (char * errorScope,     int exitCode                                                                );
 void        threadRaiseError    (char * errorScope,     int exitCode                                                                );
 ssize_t     fullRead            (int fileDescriptor,    void * buffer,          size_t nBytes                                       );

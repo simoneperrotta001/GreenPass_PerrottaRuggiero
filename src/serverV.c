@@ -8,7 +8,7 @@ int main (int argc, char * argv[]) {
     struct sockaddr_in serverV_Address, client;
     
     // Si verifica che il ServerG sia stato avviato con i parametri che si aspetta di avere
-    checkUsage(argc, (const char **) argv, SERVER_V_ARGS_NO, expectedUsageMessage);
+    checkUsage(argc, (const char **) argv, SERVER_V_ARGS_NO, messaggioAtteso);
     // Si cerca di ricavare il numero di porta a partire dal valore passato come argomento via terminale allíavvio del ServerV
     serverV_Port = (unsigned short int) strtoul((const char * restrict) argv[1], (char ** restrict) NULL, 10);
     //Se questo valore non dovesse essere valido viene lanciato un errore
@@ -134,7 +134,7 @@ void * centroVaccinaleRequestHandler (void * args) {
     ssize_t fullWriteReturnValue, fullReadReturnValue, getLineBytes;
     size_t effectiveLineLength = 0;
     char * singleLine = NULL, * nowDateString = NULL;
-    char dateCopiedFromFile[DATE_LENGTH];
+    char dateCopiedFromFile[LUNGHEZZA_DATA];
     struct tm firstTime, secondTime;
     time_t scheduledVaccinationDate, requestVaccinationDate = 0;
     double elapsedMonths;
@@ -182,8 +182,8 @@ void * centroVaccinaleRequestHandler (void * args) {
             // Corrispondenza trovata
             codiceTesseraSanitariaWasFound = TRUE;
             // Copia della data all'interno del file in una variabile di tipo stringa
-            strncpy((char *) dateCopiedFromFile, (const char *) singleLine + LUNGHEZZA_CODICE_TESSERA_SANITARIA, DATE_LENGTH - 1);
-            dateCopiedFromFile[DATE_LENGTH - 1] = '\0';
+            strncpy((char *) dateCopiedFromFile, (const char *) singleLine + LUNGHEZZA_CODICE_TESSERA_SANITARIA, LUNGHEZZA_DATA - 1);
+            dateCopiedFromFile[LUNGHEZZA_DATA - 1] = '\0';
             memset(& firstTime, 0, sizeof(firstTime));
             memset(& secondTime, 0, sizeof(secondTime));
             
@@ -216,9 +216,9 @@ void * centroVaccinaleRequestHandler (void * args) {
              Se il numero di mesi passati è minore del numero di mesi da aspettare per la successiva vaccinazione
              e il numero di mesi di differenza è maggiore di 0, è troppo presto per fare una nuova vaccinazione
              */
-            if (elapsedMonths <= (MONTHS_TO_WAIT_FOR_NEXT_VACCINATION + 1) && elapsedMonths > 0) {
+            if (elapsedMonths <= (MESI_ATTESA_PROSSIMA_SOMMINISTRAZIONE + 1) && elapsedMonths > 0) {
                 // Si copia la data data copiata dal file "serverV.dat" nella risposta da mandare al "CentroVaccinale"
-                strncpy((char *) newServerV_Reply->greenPassExpirationDate, (const char *) dateCopiedFromFile, DATE_LENGTH);
+                strncpy((char *) newServerV_Reply->dataScadenzaGreenPass, (const char *) dateCopiedFromFile, LUNGHEZZA_DATA);
                 isVaccineBlocked = TRUE;
             }
             break;
@@ -228,7 +228,7 @@ void * centroVaccinaleRequestHandler (void * args) {
     // Se è possibile fare la vaccinazione
     if (!isVaccineBlocked) {
         // Copia della data che è stata inviata dal Centro Vaccinale al pacchetto di risposta.
-        strncpy((char *) newServerV_Reply->greenPassExpirationDate, (const char *) newCentroVaccinaleRequest->greenPassExpirationDate, DATE_LENGTH);
+        strncpy((char *) newServerV_Reply->dataScadenzaGreenPass, (const char *) newCentroVaccinaleRequest->dataScadenzaGreenPass, LUNGHEZZA_DATA);
         // Aggiunta dell'esito della richiesta di vaccinazione
         newServerV_Reply->requestResult = TRUE;
         // Chiusura e riapertura del file per riinizializzare il file pointer all'inizio del file
@@ -258,7 +258,7 @@ void * centroVaccinaleRequestHandler (void * args) {
         }
         
         // Si incolla nel file temporaneo della tupla: codice, data validità e stato di validità.
-        if (fprintf(tempFilePointer, "%s:%s:%s\n", newServerV_Reply->codiceTesseraSanitaria, newServerV_Reply->greenPassExpirationDate, "1") < 0) {
+        if (fprintf(tempFilePointer, "%s:%s:%s\n", newServerV_Reply->codiceTesseraSanitaria, newServerV_Reply->dataScadenzaGreenPass, "1") < 0) {
             fclose(originalFilePointer);
             fclose(tempFilePointer);
             if (pthread_mutex_unlock(& fileSystemAccessMutex) != 0) threadAbort(PTHREAD_MUTEX_UNLOCK_SCOPE, PTHREAD_MUTEX_UNLOCK_ERROR, threadConnectionFileDescriptor, newCentroVaccinaleRequest, newServerV_Reply, nowDateString, singleLine);
@@ -334,7 +334,7 @@ void * clientS_viaServerG_RequestHandler(void * args) {
     unsigned short int greenPassStatus;
     enum boolean isGreenPassExpired = TRUE, codiceTesseraSanitariaWasFound = FALSE, isGreenPassValid = FALSE;
     FILE * originalFilePointer;
-    char codiceTesseraSanitaria[LUNGHEZZA_CODICE_TESSERA_SANITARIA], dateCopiedFromFile[DATE_LENGTH], greenPassStatusString[2];
+    char codiceTesseraSanitaria[LUNGHEZZA_CODICE_TESSERA_SANITARIA], dateCopiedFromFile[LUNGHEZZA_DATA], greenPassStatusString[2];
 
     
     // Allocazione di memoria per il pacchetto risposta del ServerV
@@ -373,8 +373,8 @@ void * clientS_viaServerG_RequestHandler(void * args) {
             // Corrispondenza trovata
             codiceTesseraSanitariaWasFound = TRUE;
             // Copia della data all'interno del file in una variabile di tipo stringa
-            strncpy((char *) dateCopiedFromFile, (const char *) singleLine + LUNGHEZZA_CODICE_TESSERA_SANITARIA, DATE_LENGTH - 1);
-            dateCopiedFromFile[DATE_LENGTH - 1] = '\0';
+            strncpy((char *) dateCopiedFromFile, (const char *) singleLine + LUNGHEZZA_CODICE_TESSERA_SANITARIA, LUNGHEZZA_DATA - 1);
+            dateCopiedFromFile[LUNGHEZZA_DATA - 1] = '\0';
             memset(& firstTime, 0, sizeof(firstTime));
             memset(& secondTime, 0, sizeof(secondTime));
 
@@ -405,8 +405,8 @@ void * clientS_viaServerG_RequestHandler(void * args) {
              Se il numero di mesi passati è minore del numero di mesi da aspettare per la successiva vaccinazione e
              il numero di mesi di differenza è maggiore di 0 il Vanilla Green Pass non è ancora scaduto.
              */
-            if (elapsedMonths <= (MONTHS_TO_WAIT_FOR_NEXT_VACCINATION + 1) && elapsedMonths > 0) isGreenPassExpired = FALSE;
-            strncpy((char *) greenPassStatusString, (const char *) singleLine + LUNGHEZZA_CODICE_TESSERA_SANITARIA + DATE_LENGTH, 1);
+            if (elapsedMonths <= (MESI_ATTESA_PROSSIMA_SOMMINISTRAZIONE + 1) && elapsedMonths > 0) isGreenPassExpired = FALSE;
+            strncpy((char *) greenPassStatusString, (const char *) singleLine + LUNGHEZZA_CODICE_TESSERA_SANITARIA + LUNGHEZZA_DATA, 1);
             greenPassStatusString[1] = '\0';
             // Conversione dello stato del Green Pass da stringa a intero
             greenPassStatus = (unsigned short int) strtoul((const char * restrict) greenPassStatusString, (char ** restrict) NULL, 10);
@@ -461,7 +461,7 @@ void * clientT_viaServerG_RequestHandler(void * args) {
     char * singleLine = NULL;;
     enum boolean codiceTesseraSanitariaWasFound = FALSE;
     FILE * originalFilePointer, * tempFilePointer = NULL;
-    char codiceTesseraSanitaria[LUNGHEZZA_CODICE_TESSERA_SANITARIA], dateCopiedFromFile[DATE_LENGTH];
+    char codiceTesseraSanitaria[LUNGHEZZA_CODICE_TESSERA_SANITARIA], dateCopiedFromFile[LUNGHEZZA_DATA];
 
     
     // Allocazione di memoria per i pacchetti: il primo proveniente dal ServerG e il secondo di risposta dal ServerV.
@@ -499,8 +499,8 @@ void * clientT_viaServerG_RequestHandler(void * args) {
             // Coincidenza esistente
             codiceTesseraSanitariaWasFound = TRUE;
             // Salvataggio della data di scadenza del Vannila Green Pass
-            strncpy((char *) dateCopiedFromFile, (const char *) singleLine + LUNGHEZZA_CODICE_TESSERA_SANITARIA, DATE_LENGTH - 1);
-            dateCopiedFromFile[DATE_LENGTH - 1] = '\0';
+            strncpy((char *) dateCopiedFromFile, (const char *) singleLine + LUNGHEZZA_CODICE_TESSERA_SANITARIA, LUNGHEZZA_DATA - 1);
+            dateCopiedFromFile[LUNGHEZZA_DATA - 1] = '\0';
             break;
         }
     }

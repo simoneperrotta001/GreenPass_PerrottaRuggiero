@@ -8,13 +8,13 @@ void checkHealtCardNumber (char * codiceTesseraSanitaria) {
 
 
 // Procedura per acquisire la configurazione riportata nel file di configurazione passato come parametro.
-void retrieveConfigurationData (const char * configFilePath, char ** configurationIP, unsigned short int * configurationPort) {
+void retrieveConfigurationData (const char * percorsoFileConfigurazione, char ** configurationIP, unsigned short int * configurationPort) {
     FILE * filePointer;
     size_t IPlength = 0, portLength = 0;
     ssize_t getLineBytes;
     char * tempStringConfigurationIP = NULL, * stringServerAddressPort = NULL;
     //apertura del file di configurazione passato come parametro
-    filePointer = fopen(configFilePath, "r");
+    filePointer = fopen(percorsoFileConfigurazione, "r");
     //se l'apertura del file fallisce lanciamo un errore
     if (!filePointer) raiseError(FOPEN_SCOPE, FOPEN_ERROR);
     if ((getLineBytes = getline((char ** restrict) & tempStringConfigurationIP, (size_t * restrict) & IPlength, (FILE * restrict) filePointer)) == -1) raiseError(GETLINE_SCOPE, GETLINE_ERROR);
@@ -42,18 +42,18 @@ char * getVaccineExpirationDate (void) {
     expirationDateTimeInfo->tm_mday = 1;
     
     // Si aggiungono almeno 5 mesi e si verifica se è cambiato l'anno
-    if (expirationDateTimeInfo->tm_mon + MONTHS_TO_WAIT_FOR_NEXT_VACCINATION + 1 > 11) {
+    if (expirationDateTimeInfo->tm_mon + MESI_ATTESA_PROSSIMA_SOMMINISTRAZIONE + 1 > 11) {
         expirationDateTimeInfo->tm_year += 1;
-        expirationDateTimeInfo->tm_mon = (expirationDateTimeInfo->tm_mon + MONTHS_TO_WAIT_FOR_NEXT_VACCINATION + 1) % MONTHS_IN_A_YEAR;
+        expirationDateTimeInfo->tm_mon = (expirationDateTimeInfo->tm_mon + MESI_ATTESA_PROSSIMA_SOMMINISTRAZIONE + 1) % MESI_IN_ANNO;
     } else {
-        expirationDateTimeInfo->tm_mon = (expirationDateTimeInfo->tm_mon + MONTHS_TO_WAIT_FOR_NEXT_VACCINATION + 1);
+        expirationDateTimeInfo->tm_mon = (expirationDateTimeInfo->tm_mon + MESI_ATTESA_PROSSIMA_SOMMINISTRAZIONE + 1);
     }
     
     // Conversione in stringa della data e ritorno al chiamante.
-    char * vaccineExpirationDate = (char *) calloc(DATE_LENGTH, sizeof(char));
+    char * vaccineExpirationDate = (char *) calloc(LUNGHEZZA_DATA, sizeof(char));
     if (!vaccineExpirationDate) raiseError(CALLOC_SCOPE, CALLOC_ERROR);
     sprintf(vaccineExpirationDate, "%02d-%02d-%d", expirationDateTimeInfo->tm_mday, expirationDateTimeInfo->tm_mon, expirationDateTimeInfo->tm_year + 1900);
-    vaccineExpirationDate[DATE_LENGTH - 1] = '\0';
+    vaccineExpirationDate[LUNGHEZZA_DATA - 1] = '\0';
     return vaccineExpirationDate;
 }
 
@@ -61,11 +61,11 @@ char * getVaccineExpirationDate (void) {
 char * getNowDate (void) {
     time_t tempTimeSeconds = time(NULL);
     struct tm * nowDateTimeInfo = localtime((const time_t *) & tempTimeSeconds);
-    char * nowDate = (char *) calloc(DATE_LENGTH, sizeof(char));
+    char * nowDate = (char *) calloc(LUNGHEZZA_DATA, sizeof(char));
     if (!nowDate) raiseError(CALLOC_SCOPE, CALLOC_ERROR);
     
     sprintf(nowDate, "%02d-%02d-%d", nowDateTimeInfo->tm_mday, nowDateTimeInfo->tm_mon + 1, nowDateTimeInfo->tm_year + 1900);
-    nowDate[DATE_LENGTH - 1] = '\0';
+    nowDate[LUNGHEZZA_DATA - 1] = '\0';
     return nowDate;
 }
 
@@ -74,14 +74,14 @@ La seguente funzione ritorna il socket file descriptor di una connessione impost
 Si passa in input il file di configurazione che è stati fornito al CentroVaccinale o al ServerG per mettersi
 in contatto con il ServerV.
 */
-int createConnectionWithServerV (const char * configFilePath) {
+int createConnectionWithServerV (const char * percorsoFileConfigurazione) {
     struct sockaddr_in serverV_Address;
     char * stringServerV_AddressIP = NULL;
     unsigned short int serverV_Port;
     int serverV_SocketFileDescriptor;
     
     // Effettivo "retrieve" del file di configurazione
-    retrieveConfigurationData(configFilePath, & stringServerV_AddressIP, & serverV_Port);
+    retrieveConfigurationData(percorsoFileConfigurazione, & stringServerV_AddressIP, & serverV_Port);
     // Si imposta la comunicazione col serverV
     serverV_SocketFileDescriptor = wsocket(AF_INET, SOCK_STREAM, 0);
     memset((void *) & serverV_Address, 0, sizeof(serverV_Address));

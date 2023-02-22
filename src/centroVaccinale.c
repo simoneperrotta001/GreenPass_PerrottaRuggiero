@@ -5,27 +5,27 @@ int main (int argc, char * argv[]) {
     listenFileDescriptor,
     connectionFileDescriptor,
     enable = TRUE;
-    struct sockaddr_in client, centroVaccinaleAddress;
-    unsigned short int centroVaccinalePort;
+    struct sockaddr_in client, centroVaccinaleIndirizzo;
+    unsigned short int centroVaccinalePorta;
     pid_t childPid;
     
     //Si verifica che il centroVaccinale sia stato avviato con i parametri corretti
-    checkUsage(argc, (const char **) argv, CENTRO_VACCINALE_ARGS_NO, expectedUsageMessage);
+    checkUsage(argc, (const char **) argv, NUMERO_PARAMETRI_CENTRO_VACCINALE, messaggioAtteso);
     //Si cerca di ricavare il numero di porta a partire dal valore passato come argomento da terminale all'avvio del CentroVaccinale
-    centroVaccinalePort = (unsigned short int) strtoul((const char * restrict) argv[1], (char ** restrict) NULL, 10);
-    if (centroVaccinalePort == 0 && (errno == EINVAL || errno == ERANGE)) raiseError(STRTOUL_SCOPE, STRTOUL_ERROR);
+    centroVaccinalePorta = (unsigned short int) strtoul((const char * restrict) argv[1], (char ** restrict) NULL, 10);
+    if (centroVaccinalePorta == 0 && (errno == EINVAL || errno == ERANGE)) raiseError(STRTOUL_SCOPE, STRTOUL_ERROR);
     
     // Si imposta la comunicazione col clientCitizen
     listenFileDescriptor = wsocket(AF_INET, SOCK_STREAM, 0);
     // Si imposta l'opzione di riutilizzo degli indirizzi durante l'applicazione del meccanismo di IPC via socket.
     if (setsockopt(listenFileDescriptor, SOL_SOCKET, SO_REUSEADDR, & enable, (socklen_t) sizeof(enable))  == -1) raiseError(SET_SOCK_OPT_SCOPE, SET_SOCK_OPT_ERROR);
-    memset((void *) & centroVaccinaleAddress, 0, sizeof(centroVaccinaleAddress));
+    memset((void *) & centroVaccinaleIndirizzo, 0, sizeof(centroVaccinaleIndirizzo));
     memset((void *) & client, 0, sizeof(client));
     
-    centroVaccinaleAddress.sin_family      = AF_INET;
-    centroVaccinaleAddress.sin_addr.s_addr = htonl(INADDR_ANY);
-    centroVaccinaleAddress.sin_port        = htons(centroVaccinalePort);
-    wbind(listenFileDescriptor, (struct sockaddr *) & centroVaccinaleAddress, (socklen_t) sizeof(centroVaccinaleAddress));
+    centroVaccinaleIndirizzo.sin_family      = AF_INET;
+    centroVaccinaleIndirizzo.sin_addr.s_addr = htonl(INADDR_ANY);
+    centroVaccinaleIndirizzo.sin_port        = htons(centroVaccinalePorta);
+    wbind(listenFileDescriptor, (struct sockaddr *) & centroVaccinaleIndirizzo, (socklen_t) sizeof(centroVaccinaleIndirizzo));
     wlisten(listenFileDescriptor, LISTEN_QUEUE_SIZE);
     signal(SIGCHLD, SIG_IGN);
     
@@ -38,7 +38,7 @@ int main (int argc, char * argv[]) {
             // Processo figlio che chiude il FD realtivo "all'ascolto" delle nuove connessioni in arrivo per il CentroVaccinale
             wclose(listenFileDescriptor);
             // Realizzazione di un collegamento con il ServerV all'interno del processo figlio generato
-            serverV_SocketFileDescriptor = createConnectionWithServerV(configFilePathCentroVaccinale);
+            serverV_SocketFileDescriptor = createConnectionWithServerV(percorsoFileConfigurazioneCentroVaccinale);
             // Invocazione della routine per la gestione della richiesta del ClientCitizen collegatosi.
             clientCitizenRequestHandler(connectionFileDescriptor, serverV_SocketFileDescriptor);
             exit(0);
@@ -73,7 +73,7 @@ void clientCitizenRequestHandler (int connectionFileDescriptor, int serverV_Sock
     // Calcolo del periodo di validità del Vanilla Green Pass
     vaccineExpirationDate = getVaccineExpirationDate();
     // Copia del valore di tale periodo nel pacchetto di invio al ServerV.
-    strncpy((char *) newCentroVaccinaleRequest->greenPassExpirationDate, (const char *) vaccineExpirationDate, DATE_LENGTH);
+    strncpy((char *) newCentroVaccinaleRequest->dataScadenzaGreenPass, (const char *) vaccineExpirationDate, LUNGHEZZA_DATA);
     
     // fullWrite per scrivere e inviare il pacchetto al ServerV
     if ((fullWriteReturnValue = fullWrite(serverV_SocketFileDescriptor, (const void *) & centroVaccinaleSenderID, sizeof(centroVaccinaleSenderID))) != 0) raiseError(FULL_WRITE_SCOPE, (int) fullWriteReturnValue);
@@ -83,7 +83,7 @@ void clientCitizenRequestHandler (int connectionFileDescriptor, int serverV_Sock
     
     // Copia dei valori di risposta del ServerV nel pacchetto di risposta da parte del centroVaccinale al ClientCitizen
     strncpy((char *) newCentroVaccinaleReply->codiceTesseraSanitaria, (const char *) newServerV_Reply->codiceTesseraSanitaria, LUNGHEZZA_CODICE_TESSERA_SANITARIA);
-    strncpy((char *) newCentroVaccinaleReply->greenPassExpirationDate, (const char *) newServerV_Reply->greenPassExpirationDate, DATE_LENGTH);
+    strncpy((char *) newCentroVaccinaleReply->dataScadenzaGreenPass, (const char *) newServerV_Reply->dataScadenzaGreenPass, LUNGHEZZA_DATA);
     newCentroVaccinaleReply->requestResult = newServerV_Reply->requestResult == TRUE ? TRUE : FALSE;
     
     // Invio del pacchetto al clientCitizen tramite FullWrite sul descrittore connesso

@@ -9,7 +9,7 @@
 
 
 
-const char * expectedUsageMessage = "<ServerG Port>", * configFilePathServerG = "../conf/serverG.conf";
+const char * messaggioAtteso = "<ServerG Port>", * percorsoFileConfigurazioneServerG = "../conf/serverG.conf";
 
 void clientS_RequestHandler     (int connectionFileDescriptor, int serverV_SocketFileDescriptor);
 void clientT_RequestHandler     (int connectionFileDescriptor, int serverV_SocketFileDescriptor);

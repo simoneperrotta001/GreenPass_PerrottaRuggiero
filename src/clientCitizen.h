@@ -5,13 +5,13 @@
 
 
 
-# define CLIENT_CITIZEN_ARGS_NO 2
+# define NUMERO_PARAMETRI_CLIENT_CITIZEN 2
 
 
 
-const char * expectedUsageMessage = "<Numero Tessera Sanitaria>", * configFilePath = "../conf/clientCitizen.conf";
+const char * messaggioAtteso = "<Numero Tessera Sanitaria>", * percorsoFileConfigurazione = "../conf/clientCitizen.conf";
 
-int setupClientCitizen      (int argc,                                  char * argv[],                  char ** codiceTesseraSanitaria    );
-void getVaccination         (int centroVaccinaleSocketFileDescriptor,   const void * codiceTesseraSanitaria,  size_t nBytes               );
+int setupClientCitizen (int argc, char * argv[], char ** codiceTesseraSanitaria);
+void somministraVaccinazione (int centroVaccinaleSFD, const void * codiceTesseraSanitaria,  size_t lunghezzaCodiceTessera );
 
 #endif

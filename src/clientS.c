@@ -10,7 +10,7 @@ int main (int argc, char * argv[]) {
     
     
     /*
-    Si richiama la funzione che permette di mandare la richeista di verifica di un eventuale Vanilla Green Pass
+    Si richiama la funzione che permette di mandare la richeista che verifica la presenza di un eventuale Green Pass
     associato. Essa avrà in ingresso: "serverG_SocketFileDescriptor", il codice della tessera sanitaria associata
     al Vanilla Green Pass e la dimensione di quest'ultimo. Viene definita una variabile "unsigned short int
     ClientS_SenderID" che conterrà il valore che identifica univocamente le entità di tipo ClientS per permettere
@@ -29,7 +29,7 @@ int setupClientS (int argc, char * argv[], char ** codiceTesseraSanitaria) {
     int serverG_SocketFileDescriptor;
     
     // Si verifica che il ClientS sia stato avviato con i parametri che si aspetta di avere
-    checkUsage(argc, (const char **) argv, CLIENT_S_ARGS_NO, expectedUsageMessage);
+    checkUsage(argc, (const char **) argv, CLIENT_S_ARGS_NO, messaggioAtteso);
     // Si verififa che il codice di tessera sanitaria immesso sia del formato e della lunghezza giusta
     checkHealtCardNumber(argv[1]);
     /*
@@ -42,10 +42,10 @@ int setupClientS (int argc, char * argv[], char ** codiceTesseraSanitaria) {
     strncpy(* codiceTesseraSanitaria, (const char *) argv[1], LUNGHEZZA_CODICE_TESSERA_SANITARIA - 1);
     
     /*
-    Si ricava, a partire dal file di configurazione definito in "configFilePath", i parametri fondamentali per contattare
+    Si ricava, a partire dal file di configurazione definito in "percorsoFileConfigurazione", i parametri fondamentali per contattare
     il CentroVaccinale.
     */
-    retrieveConfigurationData(configFilePath, & stringServerG_IP, & serverG_Port);
+    retrieveConfigurationData(percorsoFileConfigurazione, & stringServerG_IP, & serverG_Port);
     serverG_SocketFileDescriptor = wsocket(AF_INET, SOCK_STREAM, 0);
     memset((void *) & serverG_Address, 0, sizeof(serverG_Address));
     serverG_Address.sin_family = AF_INET;

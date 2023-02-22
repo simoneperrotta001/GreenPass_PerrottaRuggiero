@@ -1,9 +1,9 @@
 #include "UsageUtility.h"
 
 // Effettuiamo un controllo dei parametri relativi a ogni entità invocata
-void checkUsage (int argc, const char * argv[], int expected_argc, const char * expectedUsageMessage) {
+void checkUsage (int argc, const char * argv[], int expected_argc, const char * messaggioAtteso) {
     if (argc != expected_argc) {
-        if (fprintf(stderr, (const char * restrict) "Usage: %s %s\n", argv[0], expectedUsageMessage) < 0) raiseError(FPRINTF_SCOPE, FPRINTF_ERROR);
+        if (fprintf(stderr, (const char * restrict) "Usage: %s %s\n", argv[0], messaggioAtteso) < 0) raiseError(FPRINTF_SCOPE, FPRINTF_ERROR);
         raiseError(CHECK_USAGE_SCOPE, CHECK_USAGE_ERROR);
     }
 }

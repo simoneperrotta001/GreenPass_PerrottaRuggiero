@@ -14,27 +14,27 @@
 #define INVALID_UPDATE_STATUS_SCOPE "invalidGreenPassUpdateStatus"
 #define INVALID_UPDATE_STATUS_ERROR 202
 
-#define MONTHS_TO_WAIT_FOR_NEXT_VACCINATION 5
+#define MESI_ATTESA_PROSSIMA_SOMMINISTRAZIONE 6
 #define LUNGHEZZA_CODICE_TESSERA_SANITARIA 17
-#define DATE_LENGTH 11
-#define MONTHS_IN_A_YEAR 12
+#define LUNGHEZZA_DATA 11
+#define MESI_IN_ANNO 12
 
 
 
 typedef struct {
     char codiceTesseraSanitaria[LUNGHEZZA_CODICE_TESSERA_SANITARIA];
-    char greenPassExpirationDate[DATE_LENGTH];
+    char dataScadenzaGreenPass[LUNGHEZZA_DATA];
     unsigned short int requestResult;
 } centroVaccinaleReplyToClientCitizen;
 
 typedef struct {
     char codiceTesseraSanitaria[LUNGHEZZA_CODICE_TESSERA_SANITARIA];
-    char greenPassExpirationDate[DATE_LENGTH];
+    char dataScadenzaGreenPass[LUNGHEZZA_DATA];
 } centroVaccinaleRequestToServerV;
 
 typedef struct {
     char codiceTesseraSanitaria[LUNGHEZZA_CODICE_TESSERA_SANITARIA];
-    char greenPassExpirationDate[DATE_LENGTH];
+    char dataScadenzaGreenPass[LUNGHEZZA_DATA];
     unsigned short int requestResult;
 } serverV_ReplyToCentroVaccinale;
 
@@ -74,10 +74,10 @@ enum sender {
     clientT_viaServerG_Sender
 };
 
-void checkHealtCardNumber           (char * codiceTesseraSanitaria                                                                            );
-void retrieveConfigurationData      (const char * configFilePath, char ** configurationIP, unsigned short int * configurationPort       );
-char * getVaccineExpirationDate     (void                                                                                               );
-char * getNowDate                   (void                                                                                               );
-int createConnectionWithServerV     (const char * configFilePath                                                                        );
+void checkHealtCardNumber           (char * codiceTesseraSanitaria);
+void retrieveConfigurationData      (const char * percorsoFileConfigurazione, char ** configurationIP, unsigned short int * configurationPort);
+char * getVaccineExpirationDate     (void );
+char * getNowDate                   (void );
+int createConnectionWithServerV     (const char * percorsoFileConfigurazione);
 
 #endif /* GreenPassUtility_h */

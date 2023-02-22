@@ -7,7 +7,7 @@ int main (int argc, char * argv[]) {
     pid_t childPid;
     
     // Si verifica che il ServerG sia stato avviato con i parametri che si aspetta di avere.
-    checkUsage(argc, (const char **) argv, SERVER_G_ARGS_NO, expectedUsageMessage);
+    checkUsage(argc, (const char **) argv, SERVER_G_ARGS_NO, messaggioAtteso);
     // Si cerca di ricavare il numero di porta a partire dal valore passato come argomento via terminale all'avvio del ServerG
     serverG_Port = (unsigned short int) strtoul((const char * restrict) argv[1], (char ** restrict) NULL, 10);
     //Se questo valore non dovesse essere valido viene lanciato un errore
@@ -42,7 +42,7 @@ int main (int argc, char * argv[]) {
             // Processo figlio che chiude il FD realtivo "all'ascolto" delle nuove connessioni in arrivo per il ServerG
             wclose(listenFileDescriptor);
             // Richiesta di instaurare una connessione con il ServerV
-            serverV_SocketFileDescriptor = createConnectionWithServerV(configFilePathServerG);
+            serverV_SocketFileDescriptor = createConnectionWithServerV(percorsoFileConfigurazioneServerG);
             
             // Controllo dell'ID del mittente (ClientS o ClientT).
             switch (requestIdentifier) {

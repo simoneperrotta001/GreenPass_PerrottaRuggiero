@@ -26,7 +26,7 @@ int setupClientT (int argc, char * argv[], char ** codiceTesseraSanitaria, int *
     int serverG_SocketFileDescriptor;
     
     // Si verifica che il ClientT sia stato avviato con i parametri che si aspetta di avere.
-    checkUsage(argc, (const char **) argv, CLIENT_T_ARGS_NO, expectedUsageMessage);
+    checkUsage(argc, (const char **) argv, CLIENT_T_ARGS_NO, messaggioAtteso);
     // Si verififa che il codice di tessera sanitaria immesso sia del formato e della lunghezza giusta.
     checkHealtCardNumber(argv[1]);
     * newGreenPassStatus = (unsigned short int) strtoul((const char * restrict) argv[2], (char ** restrict) NULL, 10);
@@ -41,7 +41,7 @@ int setupClientT (int argc, char * argv[], char ** codiceTesseraSanitaria, int *
     * codiceTesseraSanitaria = (char *) calloc(LUNGHEZZA_CODICE_TESSERA_SANITARIA, sizeof(char));
     if (! * codiceTesseraSanitaria) raiseError(CALLOC_SCOPE, CALLOC_ERROR);
     strncpy(* codiceTesseraSanitaria, (const char *) argv[1], LUNGHEZZA_CODICE_TESSERA_SANITARIA - 1);
-    retrieveConfigurationData(configFilePath, & stringServerG_IP, & serverG_Port);
+    retrieveConfigurationData(percorsoFileConfigurazione, & stringServerG_IP, & serverG_Port);
     
     serverG_SocketFileDescriptor = wsocket(AF_INET, SOCK_STREAM, 0);
     memset((void *) & serverG_Address, 0, sizeof(serverG_Address));
