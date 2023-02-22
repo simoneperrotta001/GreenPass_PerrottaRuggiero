@@ -3,16 +3,16 @@
 int main (int argc, char * argv[]) {
     char * codiceTesseraSanitaria;
     
-    //tramite la seguente funzione controlliamo che gli argomenti passati siano corretti.
+    /*tramite la seguente funzione controlliamo che gli argomenti passati siano corretti.
     //Nello specifico controlliamo che il formato della tessera sanitaria sia quello previsto.
-    //Dopodichè verrà creato un socket file descriptor, che verrà poi restituito, collegato al centroVaccinale.
+    //Dopodichè verrà creato un socket file descriptor, che verrà poi restituito, collegato al centroVaccinale.*/
     int centroVaccinaleSFD = setupClientCitizen(argc, argv, & codiceTesseraSanitaria);
     codiceTesseraSanitaria[LUNGHEZZA_CODICE_TESSERA_SANITARIA - 1] = '\0';
 
-    //Effettuiamo la richiesta di vaccinazione ricevendo quindi il Greenpass. I parametri della funzione sono:
+    /*Effettuiamo la richiesta di vaccinazione ricevendo quindi il Greenpass. I parametri della funzione sono:
     //-Il socket file descriptor del centroVaccinale;
     //-Il codice della tessera sanitaria;
-    //-La lunghezza del codice della tessera, ovvero 16;
+    //-La lunghezza del codice della tessera, ovvero 16;*/
     somministraVaccinazione(centroVaccinaleSFD, (const void *) codiceTesseraSanitaria, (size_t) sizeof(char) * LUNGHEZZA_CODICE_TESSERA_SANITARIA);
     wclose(centroVaccinaleSFD);
     free(codiceTesseraSanitaria);
@@ -54,31 +54,28 @@ int setupClientCitizen (int argc, char * argv[], char ** codiceTesseraSanitaria)
 
 void somministraVaccinazione (int centroVaccinaleSFD, const void * codiceTesseraSanitaria, size_t lunghezzaCodiceTessera) {
     ssize_t fullWriteReturnValue, fullReadReturnValue;
-    // Si alloca la memoria per il pacchetto di risposta del Centro Vaccinale.
-    centroVaccinaleReplyToClientCitizen * newCentroVaccinaleReply = (centroVaccinaleReplyToClientCitizen *) calloc(1, sizeof(* newCentroVaccinaleReply));
-    if (!newCentroVaccinaleReply) raiseError(CALLOC_SCOPE, CALLOC_ERROR);
+    //Si alloca la memoria per il pacchetto di risposta del centroVaccinale
+    centroVaccinaleReplyToClientCitizen * rispostaCentroVaccinale = (centroVaccinaleReplyToClientCitizen *) calloc(1, sizeof(* rispostaCentroVaccinale));
+    if (!rispostaCentroVaccinale) raiseError(CALLOC_SCOPE, CALLOC_ERROR);
     
-    // fullWrite per la scrittura e invio del codice della tessera sanitaria del cittadino al Centro Vaccinale.
+    //fullWrite per la scrittura e invio del codice della tessera sanitaria al Centro Vaccinale
     if ((fullWriteReturnValue = fullWrite(centroVaccinaleSFD, codiceTesseraSanitaria, lunghezzaCodiceTessera)) != 0) raiseError(FULL_WRITE_SCOPE, (int) fullWriteReturnValue);
+
+    /*fullRead per ottenere e leggere la risposta da parte del CentroVaccinale. Avremo come risposta una serie
+    //di parametri: Codice Tessera Sanitaria, Data Scadenza GreenPass ed esito della richiesta.
+    //La risposta verrà salvata in "rispostaCentroVaccinale".*/
+    if ((fullReadReturnValue = fullRead(centroVaccinaleSFD, (void *) rispostaCentroVaccinale, sizeof(* rispostaCentroVaccinale))) != 0) raiseError(FULL_READ_SCOPE, (int) fullReadReturnValue);
     
-    /*
-    fullRead per ottenere e leggere la risposta da parte del CentroVaccinale. Tale risposta è caratterizzata da
-    una serie di parametri: Codice Tessera Sanitaria, Data Scadenza Vanilla Green Pass ed esito della richiesta.
-    La risposta verrà salvata in "newCentrovaccinaleReply".
-    */
-    if ((fullReadReturnValue = fullRead(centroVaccinaleSFD, (void *) newCentroVaccinaleReply, sizeof(* newCentroVaccinaleReply))) != 0) raiseError(FULL_READ_SCOPE, (int) fullReadReturnValue);
-    
-    /*
-    Si effettua un controllo sul terzo campo: se esso conterrà il valore FALSE, allora ciò vorrà dire che non
-    è stato possibile inoculare una nuova dose di vaccino, in quanto non è passata la soglia temporale
-    minima per effettuare una nuova vaccinazione. Se invece il terzo campo conterrà il valore TRUE, allora
-    significa che la vaccinazione è andata a buon fine. Fatto ciò, il ClientCitizen libera la memoria occupata,
-    rilascia le risorse e chiude il socket file descriptor richiesto in precedenza.
-    */
-    if (newCentroVaccinaleReply->requestResult == FALSE) {
-        if (fprintf(stdout, "\nNon può al momento ricevere un'altra somministrazione di vaccino. \n E' necessario che passino altri %d mesi dall'ultima somministrazione.\nLa data a partire dalla quale può effettuare l'ulteriore somministrazione e': %s\n", MESI_ATTESA_PROSSIMA_SOMMINISTRAZIONE, newCentroVaccinaleReply->dataScadenzaGreenPass) < 0) raiseError(FPRINTF_SCOPE, FPRINTF_ERROR);
+
+    /*Se la risposta conterrà come terzo parametro un valore FALSE allora non è stato possibile
+    //somministrare una nuova dose di vaccino, in quanto non è passato abbastanza tempo da superare la soglia
+    //minima per effettuare una nuova vaccinazione. Se invece il valore del terzo campo sarà TRUE, allora
+    //significa che la vaccinazione è andata a buon fine. Successivamente il ClientCitizen libera la memoria occupata,
+    //rilascia le risorse e chiude il socket file descriptor richiesto in precedenza.*/
+    if (rispostaCentroVaccinale->requestResult == FALSE) {
+        if (fprintf(stdout, "\nNon può al momento ricevere un'altra somministrazione di vaccino. \n E' necessario che passino altri %d mesi dall'ultima somministrazione.\nLa data a partire dalla quale può effettuare l'ulteriore somministrazione e': %s\n", MESI_ATTESA_PROSSIMA_SOMMINISTRAZIONE, rispostaCentroVaccinale->dataScadenzaGreenPass) < 0) raiseError(FPRINTF_SCOPE, FPRINTF_ERROR);
     } else {
-        if (fprintf(stdout, "\nVaccinazione effettuata con successo.\nLa data a partire dalla quale puoi effettuare l'ulteriore somministrazione e': %s\nArrivederci.\n", newCentroVaccinaleReply->dataScadenzaGreenPass) < 0) raiseError(FPRINTF_SCOPE, FPRINTF_ERROR);
+        if (fprintf(stdout, "\nVaccinazione effettuata con successo.\nLa data a partire dalla quale puoi effettuare l'ulteriore somministrazione e': %s\nArrivederci.\n", rispostaCentroVaccinale->dataScadenzaGreenPass) < 0) raiseError(FPRINTF_SCOPE, FPRINTF_ERROR);
     }
-    free(newCentroVaccinaleReply);
+    free(rispostaCentroVaccinale);
 }

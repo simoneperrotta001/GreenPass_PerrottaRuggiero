@@ -55,10 +55,10 @@ int main (int argc, char * argv[]) {
 void clientCitizenRequestHandler (int connectionFileDescriptor, int serverV_SocketFileDescriptor) {
     char * vaccineExpirationDate;
     // Allocazione dinamica della memoria per il pacchetto da inviare al ClientCitizen e quello da inviare al ServerV.
-    centroVaccinaleReplyToClientCitizen * newCentroVaccinaleReply = (centroVaccinaleReplyToClientCitizen *) calloc(1, sizeof(centroVaccinaleReplyToClientCitizen));
+    centroVaccinaleReplyToClientCitizen * rispostaCentroVaccinale = (centroVaccinaleReplyToClientCitizen *) calloc(1, sizeof(centroVaccinaleReplyToClientCitizen));
     centroVaccinaleRequestToServerV * newCentroVaccinaleRequest = (centroVaccinaleRequestToServerV *) calloc(1, sizeof(centroVaccinaleRequestToServerV));
     serverV_ReplyToCentroVaccinale * newServerV_Reply = (serverV_ReplyToCentroVaccinale *) calloc(1, sizeof(serverV_ReplyToCentroVaccinale));
-    if (!newCentroVaccinaleReply) raiseError(CALLOC_SCOPE, CALLOC_ERROR);
+    if (!rispostaCentroVaccinale) raiseError(CALLOC_SCOPE, CALLOC_ERROR);
     if (!newCentroVaccinaleRequest) raiseError(CALLOC_SCOPE, CALLOC_ERROR);
     if (!newServerV_Reply) raiseError(CALLOC_SCOPE, CALLOC_ERROR);
     
@@ -82,14 +82,14 @@ void clientCitizenRequestHandler (int connectionFileDescriptor, int serverV_Sock
     if ((fullReadReturnValue = fullRead(serverV_SocketFileDescriptor, (void *) newServerV_Reply, sizeof(* newServerV_Reply))) != 0) raiseError(FULL_READ_SCOPE, (int) fullReadReturnValue);
     
     // Copia dei valori di risposta del ServerV nel pacchetto di risposta da parte del centroVaccinale al ClientCitizen
-    strncpy((char *) newCentroVaccinaleReply->codiceTesseraSanitaria, (const char *) newServerV_Reply->codiceTesseraSanitaria, LUNGHEZZA_CODICE_TESSERA_SANITARIA);
-    strncpy((char *) newCentroVaccinaleReply->dataScadenzaGreenPass, (const char *) newServerV_Reply->dataScadenzaGreenPass, LUNGHEZZA_DATA);
-    newCentroVaccinaleReply->requestResult = newServerV_Reply->requestResult == TRUE ? TRUE : FALSE;
+    strncpy((char *) rispostaCentroVaccinale->codiceTesseraSanitaria, (const char *) newServerV_Reply->codiceTesseraSanitaria, LUNGHEZZA_CODICE_TESSERA_SANITARIA);
+    strncpy((char *) rispostaCentroVaccinale->dataScadenzaGreenPass, (const char *) newServerV_Reply->dataScadenzaGreenPass, LUNGHEZZA_DATA);
+    rispostaCentroVaccinale->requestResult = newServerV_Reply->requestResult == TRUE ? TRUE : FALSE;
     
     // Invio del pacchetto al clientCitizen tramite FullWrite sul descrittore connesso
-    if ((fullWriteReturnValue = fullWrite(connectionFileDescriptor, (const void *) newCentroVaccinaleReply, (size_t) sizeof(* newCentroVaccinaleReply))) != 0) raiseError(FULL_WRITE_SCOPE, (int) fullWriteReturnValue);
+    if ((fullWriteReturnValue = fullWrite(connectionFileDescriptor, (const void *) rispostaCentroVaccinale, (size_t) sizeof(* rispostaCentroVaccinale))) != 0) raiseError(FULL_WRITE_SCOPE, (int) fullWriteReturnValue);
     
-    free(newCentroVaccinaleReply);
+    free(rispostaCentroVaccinale);
     free(newCentroVaccinaleRequest);
     free(newServerV_Reply);
     free(vaccineExpirationDate);
