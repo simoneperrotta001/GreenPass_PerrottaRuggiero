@@ -8,7 +8,6 @@ int main (int argc, char * argv[]) {
     struct sockaddr_in client, centroVaccinaleIndirizzo;
     unsigned short int centroVaccinalePorta;
     pid_t childPid;
-    //ciao
     //Si verifica che il centroVaccinale sia stato avviato con i parametri corretti
     checkUsage(argc, (const char **) argv, NUMERO_PARAMETRI_CENTRO_VACCINALE, messaggioAtteso);
     //Si cerca di ricavare il numero di porta a partire dal valore passato come parametro da terminale all'avvio del CentroVaccinale
