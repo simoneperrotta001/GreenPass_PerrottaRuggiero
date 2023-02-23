@@ -6,16 +6,16 @@ int main (int argc, char * argv[]) {
     pthread_attr_t attr;
     unsigned short int serverV_Port, requestIdentifier;
     struct sockaddr_in serverV_Address, client;
-    
-    // Si verifica che il ServerG sia stato avviato con i parametri che si aspetta di avere
+
+    //-- Controlliamo che il ServerG sia stato avviato con i parametri corretti
     checkUsage(argc, (const char **) argv, SERVER_V_ARGS_NO, messaggioAtteso);
-    // Si cerca di ricavare il numero di porta a partire dal valore passato come argomento via terminale allíavvio del ServerV
+    //-- Ricaviamo il numero di porta
     serverV_Port = (unsigned short int) strtoul((const char * restrict) argv[1], (char ** restrict) NULL, 10);
-    //Se questo valore non dovesse essere valido viene lanciato un errore
+    //--Se il numero di porta non dovesse essere valido viene lanciato un errore
     if (serverV_Port == 0 && (errno == EINVAL || errno == ERANGE)) raiseError(STRTOUL_SCOPE, STRTOUL_ERROR);
     
     listenFileDescriptor = wsocket(AF_INET, SOCK_STREAM, 0);
-    // Si imposta l'opzione di riutilizzo degli indirizzi durante l'applicazione del meccanismo di IPC via socket
+    //--Durante l'applicazione del meccanismo di IPC, con le socket, impostiamo l'opzione di riutilizzo degli indirizzi
     if (setsockopt(listenFileDescriptor, SOL_SOCKET, SO_REUSEADDR, & enable, (socklen_t) sizeof(enable))  == -1) raiseError(SET_SOCK_OPT_SCOPE, SET_SOCK_OPT_ERROR);
     memset((void *) & serverV_Address, 0, sizeof(serverV_Address));
     memset((void *) & client, 0, sizeof(client));
@@ -26,17 +26,14 @@ int main (int argc, char * argv[]) {
     wlisten(listenFileDescriptor, LISTEN_QUEUE_SIZE * LISTEN_QUEUE_SIZE);
     
     
-    /*
-    Inizializzazione di un mutex per poter accedere in mutua esclusione per operazioni
-    di lettura e scrittura sul file "serverV.dat" memorizzato sul file system di ServerV.
-    */
+    //--Inizializziamo un mutex che servirà per effettuare la mutua esclusione per l'accesso al file serverV.dat
     if (pthread_mutex_init(& fileSystemAccessMutex, (const pthread_mutexattr_t *) NULL) != 0) raiseError(PTHREAD_MUTEX_INIT_SCOPE, PTHREAD_MUTEX_INIT_ERROR);
     /*
-    Inizializzazione di un mutex su un puntatore a intero che punta a un intero rappresentate il socket file descriptor che
+    --Inizializziamo un mutex su un puntatore a intero che punta a un intero rappresentate il socket file descriptor che
     il singolo thread userà per mettersi in collegamento con il ServerG o con il CentroVaccinale.
     */
     if (pthread_mutex_init(& connectionFileDescriptorMutex, (const pthread_mutexattr_t *) NULL) != 0) raiseError(PTHREAD_MUTEX_INIT_SCOPE, PTHREAD_MUTEX_INIT_ERROR);
-    // Inizializzazione degli attributi di entrambi i mutex.
+    // --Inizializziamo gli attributi di entrambi i mutex.
     if (pthread_attr_init(& attr) != 0) raiseError(PTHREAD_MUTEX_ATTR_INIT_SCOPE, PTHREAD_MUTEX_ATTR_INIT_ERROR);
     /*
     The pthread_detach() function marks the thread identified by
@@ -52,10 +49,10 @@ int main (int argc, char * argv[]) {
         while ((connectionFileDescriptor = waccept(listenFileDescriptor, (struct sockaddr *) & client, (socklen_t *) & clientAddressLength)) < 0 && (errno == EINTR));
         // fullRead per leggere l'ID dell'entità connessa con il ServerV.
         if ((fullReadReturnValue = fullRead(connectionFileDescriptor, (void *) & requestIdentifier, sizeof(requestIdentifier))) != 0) raiseError(FULL_READ_SCOPE, (int) fullReadReturnValue);
-        
-        // Si acquisisce il mutex sul socket file descriptor di connessione.
+
+        //--Preleviamo il mutex sul socket file descriptor di connessione.
         if (pthread_mutex_lock(& connectionFileDescriptorMutex) != 0) raiseError(PTHREAD_MUTEX_LOCK_SCOPE, PTHREAD_MUTEX_LOCK_ERROR);
-        // Si alloca l'area di memoria necessaria per contenere il duplicato del FD connesso
+        // Allochiamo l'area di memoria necessaria per contenere il duplicato del FD connesso
         int * threadConnectionFileDescriptor = (int *) calloc(1, sizeof(* threadConnectionFileDescriptor));
         if (!threadConnectionFileDescriptor) raiseError(CALLOC_SCOPE, CALLOC_ERROR);
         /*
@@ -77,32 +74,23 @@ int main (int argc, char * argv[]) {
          */
         if ((* threadConnectionFileDescriptor = dup(connectionFileDescriptor)) < 0) raiseError(DUP_SCOPE, DUP_ERROR);
         
-        // Rilascio del mutex usufruito per il socket file descriptor originale
+        // --Rilasciamo il mutex usufruito per il socket file descriptor originale
         if (pthread_mutex_unlock(& connectionFileDescriptorMutex) != 0)  raiseError(PTHREAD_MUTEX_UNLOCK_SCOPE, PTHREAD_MUTEX_UNLOCK_ERROR);
-        // si individua la routine apposita da invocare a seconda del mittente della richiesta pervenuta al ServerV
+        // Individuiamo la routine apposita da invocare a seconda del mittente della richiesta pervenuta al ServerV
         switch (requestIdentifier) {
             // Gestione servizio per il Centro vaccinale.
             case centroVaccinaleSender:
-                /*
-                Passo sempre lo stesso TID. Non mi interessa fare join. I thread sono detached. Creazione thread apposito
-                 per gestire il servizio.
-                */
+                //--Sempre con lo stesso TID creiamo un thread apposito per gestire il servizio.
                 if ((threadCreationReturnValue = pthread_create(& singleTID, & attr, & centroVaccinaleRequestHandler, threadConnectionFileDescriptor)) != 0) raiseError(PTHREAD_CREATE_SCOPE, PTHREAD_CREATE_ERROR);
                 break;
             // Gestione servizio per il ClientS via ServerG.
             case clientS_viaServerG_Sender:
-                /*
-                Passo sempre lo stesso TID. Non mi interessa fare join. I thread sono detached. Creazione thread apposito
-                 per gestire il servizio.
-                */
+                //--Sempre con lo stesso TID creiamo un thread apposito per gestire il servizio.
                 if ((threadCreationReturnValue = pthread_create(& singleTID, & attr, & clientS_viaServerG_RequestHandler, threadConnectionFileDescriptor)) != 0) raiseError(PTHREAD_CREATE_SCOPE, PTHREAD_CREATE_ERROR);
                 break;
             // Gestione servizio per il ClientT via ServerG.
             case clientT_viaServerG_Sender:
-                /*
-                Passo sempre lo stesso TID. Non mi interessa fare join. I thread sono detached. Creazione thread apposito
-                 per gestire il servizio.
-                */
+                //--Sempre con lo stesso TID creiamo un thread apposito per gestire il servizio.
                 if ((threadCreationReturnValue = pthread_create(& singleTID, & attr, & clientT_viaServerG_RequestHandler, threadConnectionFileDescriptor)) != 0) raiseError(PTHREAD_CREATE_SCOPE, PTHREAD_CREATE_ERROR);
                 break;
             default:
@@ -110,12 +98,12 @@ int main (int argc, char * argv[]) {
                 break;
         }
         /*
-        Si chiude il socket file descriptor relativo a quella connessione nel thread main e il flusso principale del
+        Chiudiamo il socket file descriptor relativo a quella connessione nel thread main e il flusso principale del
         ServerV si rimette in attesa di una nuova connessione.
         */
         wclose(connectionFileDescriptor);
     }
-    // Codice mai eseguito: destroy sugli attributi in quanto si è allocata memoria dinamica in precedenza.
+    //--Visto che si è allocata memoria dinamica in precedenza deallochiamo tale memoria invocando destory su tutti gli attributi
     if (pthread_attr_destroy(& attr) != 0) raiseError(PTHREAD_MUTEX_ATTR_DESTROY_SCOPE, PTHREAD_MUTEX_ATTR_DESTROY_ERROR);
     wclose(listenFileDescriptor);
     exit(0);
@@ -123,13 +111,13 @@ int main (int argc, char * argv[]) {
 
 void * centroVaccinaleRequestHandler (void * args) {
     /*
-    Acquisizione del mutex al fine di andare a dereferenziare in mutua esclusione il valore contenuto nel puntatore passato
-    come argomento alla routine assegnata al thread e liberare la memoria dinamica ad esso associata.
+    -- Utilizziamo il mutex per deferenziare in mutua esclusione il valore contenuto nel puntatore della routine assegnata
+     al thread e deallocare la memoria dinamica ad esso associata.
     */
     if (pthread_mutex_lock(& connectionFileDescriptorMutex) != 0) threadRaiseError(PTHREAD_MUTEX_LOCK_SCOPE, PTHREAD_MUTEX_LOCK_ERROR);
     int threadConnectionFileDescriptor = * ((int *) args);
     free(args);
-    // Rilascio del mutex
+    //-- Rilasciamo il mutex
     if (pthread_mutex_unlock(& connectionFileDescriptorMutex) != 0) threadRaiseError(PTHREAD_MUTEX_UNLOCK_SCOPE, PTHREAD_MUTEX_UNLOCK_ERROR);
     ssize_t fullWriteReturnValue, fullReadReturnValue, getLineBytes;
     size_t effectiveLineLength = 0;
@@ -141,8 +129,7 @@ void * centroVaccinaleRequestHandler (void * args) {
     enum boolean isVaccineBlocked = FALSE, codiceTesseraSanitariaWasFound = FALSE;
     FILE * originalFilePointer, * tempFilePointer;
     
-    
-    // Allocazione di memoria per i pacchetti: il primo proveniente dal Cenrto Vaccinale e il secondo di risposta dal ServerV.
+    //--Allochiamo la memoria per i dati provenienti dal Centro Vaccinale e la risposta del ServerV
     centroVaccinaleRequestToServerV * newCentroVaccinaleRequest = (centroVaccinaleRequestToServerV *) calloc(1, sizeof(* newCentroVaccinaleRequest));
     if (!newCentroVaccinaleRequest) threadAbort(CALLOC_SCOPE, CALLOC_ERROR, threadConnectionFileDescriptor, NULL);
     
@@ -155,10 +142,8 @@ void * centroVaccinaleRequestHandler (void * args) {
     strncpy((char *) newServerV_Reply->codiceTesseraSanitaria, (const char *) newCentroVaccinaleRequest->codiceTesseraSanitaria, LUNGHEZZA_CODICE_TESSERA_SANITARIA);
     newServerV_Reply->requestResult = FALSE;
     
-    /*
-    Acquisizione del mutex per poter accedere in mutua esclusione per operazioni
-    di lettura e scrittura sul file "serverV.dat" e sul file "tempServerV.dat" memorizzati sul file system di ServerV.
-    */
+    //--Utilizziamo il mutex
+
     if (pthread_mutex_lock(& fileSystemAccessMutex) != 0) threadAbort(PTHREAD_MUTEX_LOCK_SCOPE, PTHREAD_MUTEX_LOCK_ERROR, threadConnectionFileDescriptor, newCentroVaccinaleRequest, newServerV_Reply);
     // Apertura in modalità sola lettura per il file "serverV.dat"
     originalFilePointer = fopen(dataPath, "r");
@@ -169,25 +154,22 @@ void * centroVaccinaleRequestHandler (void * args) {
         threadAbort(FOPEN_SCOPE, FOPEN_ERROR, threadConnectionFileDescriptor, newCentroVaccinaleRequest, newServerV_Reply);
     }
     
-    /*
-    Controllo che verifica se siano passati o meno almeno cinque mesi dall'ultimo vaccino effettuato e cioè si
-    controlla se il Vanilla Green Pass risulta essere scaduto o meno. Lettura linea per linea all'iterno del file "serverV.dat".
-    */
+    //--Verifichiamo la validità del Green Pass (se risulta scaduto o meno)
     while ((getLineBytes = getline((char ** restrict) & singleLine, (size_t * restrict) & effectiveLineLength, (FILE * restrict) originalFilePointer)) != -1) {
         /*
-         Controllo se il numero di tessera sanitaria incontrato nel file corrisponde a quello inviato dal Centro Vaccinale
+         --Controlliamo se il numero di tessera sanitaria incontrato nel file corrisponde a quello inviato dal Centro Vaccinale
          e che già è presente nel pacchetto di risposta del ServerV.
          */
         if ((strncmp((const char *) newServerV_Reply->codiceTesseraSanitaria, (const char *) singleLine, LUNGHEZZA_CODICE_TESSERA_SANITARIA - 1)) == 0) {
-            // Corrispondenza trovata
+            //--Se c'è corrispondenza
             codiceTesseraSanitariaWasFound = TRUE;
-            // Copia della data all'interno del file in una variabile di tipo stringa
+            //--Copiamo la data all'interno del file in una variabile di tipo stringa
             strncpy((char *) dateCopiedFromFile, (const char *) singleLine + LUNGHEZZA_CODICE_TESSERA_SANITARIA, LUNGHEZZA_DATA - 1);
             dateCopiedFromFile[LUNGHEZZA_DATA - 1] = '\0';
             memset(& firstTime, 0, sizeof(firstTime));
             memset(& secondTime, 0, sizeof(secondTime));
             
-            // Confronto di tale data con la data attuale
+            //--Confrontiamo tale data con la data attuale
             firstTime.tm_mday = (int) strtol((const char * restrict) & dateCopiedFromFile[0], (char ** restrict) NULL, 10);
             firstTime.tm_mon = ((int) strtol((const char * restrict) & dateCopiedFromFile[3], (char ** restrict) NULL, 10) - 1);
             firstTime.tm_year = ((int) strtol((const char * restrict) & dateCopiedFromFile[6], (char ** restrict) NULL, 10) - 1900);
@@ -210,14 +192,14 @@ void * centroVaccinaleRequestHandler (void * args) {
                 threadAbort(MKTIME_SCOPE, MKTIME_ERROR, threadConnectionFileDescriptor, newCentroVaccinaleRequest, newServerV_Reply, nowDateString, singleLine);
             }
             
-            // Calcolo dei mesi di differenza tra le due date
+            //--Calcoliamo i mesi di differenza tra le due date
             elapsedMonths = ((((difftime(scheduledVaccinationDate, requestVaccinationDate) / 60) / 60) / 24) / 31);
             /*
-             Se il numero di mesi passati è minore del numero di mesi da aspettare per la successiva vaccinazione
-             e il numero di mesi di differenza è maggiore di 0, è troppo presto per fare una nuova vaccinazione
+             Se il numero di mesi passati è minore del numero di mesi da aspettare per la successiva vaccinazione e
+             il numero di mesi di differenza è maggiore di 0 il Vanilla Green Pass non è ancora scaduto.
              */
             if (elapsedMonths <= (MESI_ATTESA_PROSSIMA_SOMMINISTRAZIONE + 1) && elapsedMonths > 0) {
-                // Si copia la data data copiata dal file "serverV.dat" nella risposta da mandare al "CentroVaccinale"
+                // Copiamo la data dal file "serverV.dat" nella risposta da mandare al "CentroVaccinale"
                 strncpy((char *) newServerV_Reply->dataScadenzaGreenPass, (const char *) dateCopiedFromFile, LUNGHEZZA_DATA);
                 isVaccineBlocked = TRUE;
             }
@@ -225,13 +207,13 @@ void * centroVaccinaleRequestHandler (void * args) {
         }
     }
     
-    // Se è possibile fare la vaccinazione
+    //--Se è possibile fare la vaccinazione
     if (!isVaccineBlocked) {
-        // Copia della data che è stata inviata dal Centro Vaccinale al pacchetto di risposta.
+        //--Copiamo la data che è stata inviata dal Centro Vaccinale al pacchetto di risposta.
         strncpy((char *) newServerV_Reply->dataScadenzaGreenPass, (const char *) newCentroVaccinaleRequest->dataScadenzaGreenPass, LUNGHEZZA_DATA);
-        // Aggiunta dell'esito della richiesta di vaccinazione
+        //--Aggiungiamo l'esito della richiesta di vaccinazione
         newServerV_Reply->requestResult = TRUE;
-        // Chiusura e riapertura del file per riinizializzare il file pointer all'inizio del file
+        //--Chiudiamo e riapriamo del file per riinizializzare il file pointer all'inizio del file
         fclose(originalFilePointer);
         originalFilePointer = fopen(dataPath, "r");
         if (!originalFilePointer) {
@@ -240,24 +222,21 @@ void * centroVaccinaleRequestHandler (void * args) {
             threadAbort(FOPEN_SCOPE, FOPEN_ERROR, threadConnectionFileDescriptor, newCentroVaccinaleRequest, newServerV_Reply, nowDateString, singleLine);
         }
         
-        // Salvo nel file serverV.dat la nuova data di scadenza della vaccinazione
+        //--Salviamo nel file serverV.dat la nuova data di scadenza della vaccinazione
         while ((getLineBytes = getline(& singleLine, & effectiveLineLength, originalFilePointer)) != -1) {
             if ((strncmp((const char *) newServerV_Reply->codiceTesseraSanitaria, (const char *) singleLine, LUNGHEZZA_CODICE_TESSERA_SANITARIA - 1)) != 0) {
-                // Si confronta il codice della tessera sanitaria di input con quello nel file "serverV.dat"
+                //--Confontiamo il codice della tessera sanitaria di input del client con quello memorizzato nel file "serverV.dat"
                 if (fprintf(tempFilePointer, "%s", singleLine) < 0) {
                     fclose(originalFilePointer);
                     fclose(tempFilePointer);
-                    /*
-                     Copia di tutto il file "serverV.dat nel file temporaneo "tempServerV.dat" tranne che per la linea riferita
-                     a quel codice di tessera sanitaria per il quale è stato possibile effettuare la vaccinazione
-                     */
+                    //Copiamo tutto il file "serverV.dat nel file temporaneo "tempServerV.dat"
                     if (pthread_mutex_unlock(& fileSystemAccessMutex) != 0) threadAbort(PTHREAD_MUTEX_UNLOCK_SCOPE, PTHREAD_MUTEX_UNLOCK_ERROR, threadConnectionFileDescriptor, newCentroVaccinaleRequest, newServerV_Reply, nowDateString, singleLine);
                     threadAbort(FPRINTF_SCOPE, FPRINTF_ERROR, threadConnectionFileDescriptor, newCentroVaccinaleRequest, newServerV_Reply, nowDateString, singleLine);
                 }
             }
         }
         
-        // Si incolla nel file temporaneo della tupla: codice, data validità e stato di validità.
+        //--Inseriamo nel file temporaneo della tupla: codice, data validità e stato di validità.
         if (fprintf(tempFilePointer, "%s:%s:%s\n", newServerV_Reply->codiceTesseraSanitaria, newServerV_Reply->dataScadenzaGreenPass, "1") < 0) {
             fclose(originalFilePointer);
             fclose(tempFilePointer);
@@ -268,34 +247,34 @@ void * centroVaccinaleRequestHandler (void * args) {
         // Update Files
         fclose(originalFilePointer);
         fclose(tempFilePointer);
-        // Eliminazione del file originale
+        //--Eliminiamo il file originale
         if (remove(dataPath) != 0) {
             if (pthread_mutex_unlock(& fileSystemAccessMutex) != 0) threadAbort(PTHREAD_MUTEX_UNLOCK_SCOPE, PTHREAD_MUTEX_UNLOCK_ERROR, threadConnectionFileDescriptor, newCentroVaccinaleRequest, newServerV_Reply, nowDateString, singleLine);
             threadAbort(REMOVE_SCOPE, REMOVE_ERROR, threadConnectionFileDescriptor, newCentroVaccinaleRequest, newServerV_Reply, nowDateString, singleLine);
         }
         
-        // Ridenominazione del file temporaneo con il nome del file originale
+        //--Ridenominiamo il file temporaneo con il nome del file originale
         if (rename(tempDataPath, dataPath) != 0) {
             if (pthread_mutex_unlock(& fileSystemAccessMutex) != 0) threadAbort(PTHREAD_MUTEX_UNLOCK_SCOPE, PTHREAD_MUTEX_UNLOCK_ERROR, threadConnectionFileDescriptor, newCentroVaccinaleRequest, newServerV_Reply, nowDateString, singleLine);
             threadAbort(RENAME_SCOPE, RENAME_ERROR, threadConnectionFileDescriptor, newCentroVaccinaleRequest, newServerV_Reply, nowDateString, singleLine);
         }
         
-        // Creazione file temporaneo
+        //--Creiamo un file temporaneo e lo apriamo
         tempFilePointer = fopen(tempDataPath, "w+");
         if (!tempFilePointer) {
             if (pthread_mutex_unlock(& fileSystemAccessMutex) != 0) threadAbort(PTHREAD_MUTEX_UNLOCK_SCOPE, PTHREAD_MUTEX_UNLOCK_ERROR, threadConnectionFileDescriptor, newCentroVaccinaleRequest, newServerV_Reply, nowDateString, singleLine);
             threadAbort(FOPEN_SCOPE, FOPEN_ERROR, threadConnectionFileDescriptor, newCentroVaccinaleRequest, newServerV_Reply, nowDateString, singleLine);
         }
-        // Chiusura del file temporaneo
+        //Chiudiamo il file temporaneo
         fclose(tempFilePointer);
     } else {
         fclose(originalFilePointer);
         fclose(tempFilePointer);
     }
-    
-    // Se il codice della tessera sanitaria è stato trovato si invia la risposta
+
+    //--Inviamo la rispsota se il codice della tessera sanitaria è stato individuato
     if (codiceTesseraSanitariaWasFound) {
-        // Rilascio del mutex sul file system per l'accesso ai file.
+        // Rilasciamo il mutex sul file system per l'accesso ai file.
         if (pthread_mutex_unlock(& fileSystemAccessMutex) != 0) threadAbort(PTHREAD_MUTEX_UNLOCK_SCOPE, PTHREAD_MUTEX_UNLOCK_ERROR, threadConnectionFileDescriptor, newCentroVaccinaleRequest, newServerV_Reply, nowDateString, singleLine);
         
         // fullWrite per l'invio della risposta al Centro Vaccinale dell'esito positivo o negativo della richiesta effettuata
@@ -317,13 +296,13 @@ void * centroVaccinaleRequestHandler (void * args) {
 
 void * clientS_viaServerG_RequestHandler(void * args) {
     /*
-    Acquisizione del mutex al fine di andare a dereferenziare in mutua esclusione il valore contenuto nel puntatore passato
-    come argomento alla routine assegnata al thread.
+     * -- Utilizziamo il mutex per deferenziare, in mutua esclusione, il valore contenuto nel puntatore della routine assegnata
+     al thread.
     */
     if (pthread_mutex_lock(& connectionFileDescriptorMutex) != 0) threadRaiseError(PTHREAD_MUTEX_LOCK_SCOPE, PTHREAD_MUTEX_LOCK_ERROR);
     int threadConnectionFileDescriptor = * ((int *) args);
     free(args);
-    // Rilascio del mutex
+    //--Rilasciamo il mutex
     if (pthread_mutex_unlock(& connectionFileDescriptorMutex) != 0) threadRaiseError(PTHREAD_MUTEX_UNLOCK_SCOPE, PTHREAD_MUTEX_UNLOCK_ERROR);
     ssize_t fullWriteReturnValue, fullReadReturnValue, getLineBytes;
     size_t effectiveLineLength = 0;
@@ -337,48 +316,43 @@ void * clientS_viaServerG_RequestHandler(void * args) {
     char codiceTesseraSanitaria[LUNGHEZZA_CODICE_TESSERA_SANITARIA], dateCopiedFromFile[LUNGHEZZA_DATA], greenPassStatusString[2];
 
     
-    // Allocazione di memoria per il pacchetto risposta del ServerV
+    //--Allocchiamo la memoria per il pacchetto risposta del ServerV
     serverV_ReplyToServerG_clientS * newServerV_Reply = (serverV_ReplyToServerG_clientS *) calloc(1, sizeof(* newServerV_Reply));
     if (!newServerV_Reply) threadAbort(CALLOC_SCOPE, CALLOC_ERROR, threadConnectionFileDescriptor, NULL);
 
     // fullRead per attendere la ricezione del codice della tessera sanitaria
     if ((fullReadReturnValue = fullRead(threadConnectionFileDescriptor, (void *) codiceTesseraSanitaria, (size_t) LUNGHEZZA_CODICE_TESSERA_SANITARIA * sizeof(char))) != 0) threadAbort(FULL_READ_SCOPE, (int) fullReadReturnValue, threadConnectionFileDescriptor, newServerV_Reply);
 
-    // Copia di HCN nel pacchetto di risposta
+    //--Copiamo l' HCN nel pacchetto di risposta
     strncpy((char *) newServerV_Reply->codiceTesseraSanitaria, (const char *) codiceTesseraSanitaria, LUNGHEZZA_CODICE_TESSERA_SANITARIA);
     newServerV_Reply->requestResult = FALSE;
 
-    /*
-    Acquisizione del mutex per poter accedere in mutua esclusione per operazioni
-    di lettura sul file "serverV.dat" memorizzati sul file system di ServerV.
-    */
+    //--Utilizziamo il mutex per accedere alla sezione critica in mutua esclusione
+
     if (pthread_mutex_lock(& fileSystemAccessMutex) != 0) threadAbort(PTHREAD_MUTEX_LOCK_SCOPE, PTHREAD_MUTEX_LOCK_ERROR, threadConnectionFileDescriptor, newServerV_Reply);
-    // Apertura del file "serverV.dat" in lettura
+    //--Apriamo il file "serverV.dat" in lettura
     originalFilePointer = fopen(dataPath, "r");
     if (!originalFilePointer) {
         if (pthread_mutex_unlock(& fileSystemAccessMutex) != 0) threadAbort(PTHREAD_MUTEX_UNLOCK_SCOPE, PTHREAD_MUTEX_UNLOCK_ERROR, threadConnectionFileDescriptor, newServerV_Reply);
         threadAbort(FOPEN_SCOPE, FOPEN_ERROR, threadConnectionFileDescriptor, newServerV_Reply);
     }
 
-    /*
-    Controllo che verifica se siano passati o meno cinque mesi dall'ultimo vaccino effettuato e cioè si controlla se il Vanilla
-    Green Pass risulta essere scaduto o meno. Lettura linea per linea all'iterno del file "serverV.dat".
-    */
+    //--Verifichiamo la validità del Green Pass (se risulta scaduto o meno)
     while ((getLineBytes = getline(& singleLine, & effectiveLineLength, originalFilePointer)) != -1) {
         /*
-         Controllo se il numero di tessera sanitaria incontrato nel file corrisponde a quello inviato dal Centro Vaccinale
+         --Controlliamo se il numero di tessera sanitaria incontrato nel file corrisponde a quello inviato dal Centro Vaccinale
          e che già è presente nel pacchetto di risposta del ServerV.
          */
         if ((strncmp((const char *) newServerV_Reply->codiceTesseraSanitaria, (const char *) singleLine, LUNGHEZZA_CODICE_TESSERA_SANITARIA - 1)) == 0) {
-            // Corrispondenza trovata
+            //--Se c'è corrispondenza
             codiceTesseraSanitariaWasFound = TRUE;
-            // Copia della data all'interno del file in una variabile di tipo stringa
+            //--Copiamo la data all'interno del file in una variabile di tipo stringa
             strncpy((char *) dateCopiedFromFile, (const char *) singleLine + LUNGHEZZA_CODICE_TESSERA_SANITARIA, LUNGHEZZA_DATA - 1);
             dateCopiedFromFile[LUNGHEZZA_DATA - 1] = '\0';
             memset(& firstTime, 0, sizeof(firstTime));
             memset(& secondTime, 0, sizeof(secondTime));
 
-            // Confronto di tale data con la data attuale
+            //--Confrontiamo tale data con la data attuale
             firstTime.tm_mday = (int) strtol((const char * restrict) & dateCopiedFromFile[0], (char ** restrict) NULL, 10);
             firstTime.tm_mon = ((int) strtol((const char * restrict) & dateCopiedFromFile[3], (char ** restrict) NULL, 10) - 1);
             firstTime.tm_year = ((int) strtol((const char * restrict) & dateCopiedFromFile[6], (char ** restrict) NULL, 10) - 1900);
@@ -399,7 +373,7 @@ void * clientS_viaServerG_RequestHandler(void * args) {
                 threadAbort(MKTIME_SCOPE, MKTIME_ERROR, threadConnectionFileDescriptor, newServerV_Reply, nowDateString, singleLine);
             }
 
-            // Calcolo dei mesi di differenza tra le due date
+            //--Calcoliamo i mesi di differenza tra le due date
             elapsedMonths = ((((difftime(scheduledVaccinationDate, requestVaccinationDate) / 60) / 60) / 24) / 31);
             /*
              Se il numero di mesi passati è minore del numero di mesi da aspettare per la successiva vaccinazione e
@@ -408,10 +382,10 @@ void * clientS_viaServerG_RequestHandler(void * args) {
             if (elapsedMonths <= (MESI_ATTESA_PROSSIMA_SOMMINISTRAZIONE + 1) && elapsedMonths > 0) isGreenPassExpired = FALSE;
             strncpy((char *) greenPassStatusString, (const char *) singleLine + LUNGHEZZA_CODICE_TESSERA_SANITARIA + LUNGHEZZA_DATA, 1);
             greenPassStatusString[1] = '\0';
-            // Conversione dello stato del Green Pass da stringa a intero
+            //--Convertiamo lo stato del Green Pass da stringa a intero
             greenPassStatus = (unsigned short int) strtoul((const char * restrict) greenPassStatusString, (char ** restrict) NULL, 10);
             
-            // Controllo di tale stato: se FALSE significa che non è valido, altriemnti è valido.
+            //--Controlliamo la validità dello stato: se FALSE significa che non è valido, altrimenti è valido.
             if ((greenPassStatus == FALSE) && (errno == EINVAL || errno == ERANGE)) {
                 fclose(originalFilePointer);
                 if (pthread_mutex_unlock(& fileSystemAccessMutex) != 0) threadAbort(PTHREAD_MUTEX_UNLOCK_SCOPE, PTHREAD_MUTEX_UNLOCK_ERROR, threadConnectionFileDescriptor, newServerV_Reply, nowDateString, singleLine);
@@ -423,12 +397,12 @@ void * clientS_viaServerG_RequestHandler(void * args) {
     }
 
     fclose(originalFilePointer);
-    // Se è stato trovato il numero di tessera sanitaria nel file "ServerV.dat"
+    //--Se troviamo il numero di tessera sanitaria nel file "ServerV.dat"
     if (codiceTesseraSanitariaWasFound) {
-        // Acquisizione del mutex sull'accesso al file system.
+        //--Utilizziamo il mutex per l'accesso al file system.
         if (pthread_mutex_unlock(& fileSystemAccessMutex) != 0) threadAbort(PTHREAD_MUTEX_UNLOCK_SCOPE, PTHREAD_MUTEX_UNLOCK_ERROR, threadConnectionFileDescriptor, newServerV_Reply, nowDateString, singleLine);
 
-        // Se il Green Pass è valido e non è scaduto, si inserisce nel pacchetto di risposta l'esito dei controlli
+        //Se il Green Pass è valido e non è scaduto, si inserisce nel pacchetto di risposta l'esito dei controlli
         if (isGreenPassValid && !isGreenPassExpired) newServerV_Reply->requestResult = TRUE;
         
         // fullWrite per inviare il pacchetto
@@ -448,13 +422,13 @@ void * clientS_viaServerG_RequestHandler(void * args) {
 
 void * clientT_viaServerG_RequestHandler(void * args) {
     /*
-    Acquisizione del mutex al fine di andare a dereferenziare in mutua esclusione il valore contenuto nel puntatore passato
-    come argomento alla routine assegnata al thread.
+     * -- Utilizziamo il mutex per deferenziare, in mutua esclusione, il valore contenuto nel puntatore della routine assegnata
+     al thread.
     */
     if (pthread_mutex_lock(& connectionFileDescriptorMutex) != 0) threadRaiseError(PTHREAD_MUTEX_LOCK_SCOPE, PTHREAD_MUTEX_LOCK_ERROR);
     int threadConnectionFileDescriptor = * ((int *) args);
     free(args);
-    // Rilascio del mutex
+    // Rilasciamo il mutex
     if (pthread_mutex_unlock(& connectionFileDescriptorMutex) != 0) threadRaiseError(PTHREAD_MUTEX_UNLOCK_SCOPE, PTHREAD_MUTEX_UNLOCK_ERROR);
     ssize_t fullWriteReturnValue, fullReadReturnValue, getLineBytes;
     size_t effectiveLineLength = 0;
@@ -464,7 +438,7 @@ void * clientT_viaServerG_RequestHandler(void * args) {
     char codiceTesseraSanitaria[LUNGHEZZA_CODICE_TESSERA_SANITARIA], dateCopiedFromFile[LUNGHEZZA_DATA];
 
     
-    // Allocazione di memoria per i pacchetti: il primo proveniente dal ServerG e il secondo di risposta dal ServerV.
+    //--Allochiamo memoria per i pacchetti: il primo proveniente dal ServerG e il secondo di risposta dal ServerV.
     serverG_RequestToServerV_onBehalfOfClientT * newServerG_Request = (serverG_RequestToServerV_onBehalfOfClientT *) calloc(1, sizeof(* newServerG_Request));
     if (!newServerG_Request) threadAbort(CALLOC_SCOPE, CALLOC_ERROR, threadConnectionFileDescriptor, NULL);
 
@@ -476,15 +450,12 @@ void * clientT_viaServerG_RequestHandler(void * args) {
         threadAbort(FULL_READ_SCOPE, (int) fullReadReturnValue, threadConnectionFileDescriptor, newServerG_Request, newServerV_Reply);
     }
 
-    // Copia del codice della tessera sanitaria nel pacchetto di risposta
+    // --Copiamo il codice della tessera sanitaria nel pacchetto di risposta
     strncpy((char *) codiceTesseraSanitaria, (const char *) newServerG_Request->codiceTesseraSanitaria, LUNGHEZZA_CODICE_TESSERA_SANITARIA);
     strncpy((char *) newServerV_Reply->codiceTesseraSanitaria, (const char *) codiceTesseraSanitaria, LUNGHEZZA_CODICE_TESSERA_SANITARIA);
     newServerV_Reply->updateResult = FALSE;
 
-    /*
-    Acquisizione del mutex per poter accedere in mutua esclusione per operazioni
-    di lettura e scrittura sul file "serverV.dat" e "tempServerV.dat" memorizzato sul file system di ServerV.
-    */
+    //--Utilizziamo il mutex per accedere alla sezione critica in mutua esclusione ed effetturare alcune operazioni
     if (pthread_mutex_lock(& fileSystemAccessMutex) != 0) threadAbort(PTHREAD_MUTEX_LOCK_SCOPE, PTHREAD_MUTEX_LOCK_ERROR, threadConnectionFileDescriptor, newServerG_Request, newServerV_Reply);
     originalFilePointer = fopen(dataPath, "r");
     if (!originalFilePointer) {
@@ -492,13 +463,13 @@ void * clientT_viaServerG_RequestHandler(void * args) {
         threadAbort(FOPEN_SCOPE, FOPEN_ERROR, threadConnectionFileDescriptor, newServerG_Request, newServerV_Reply);
     }
 
-    // Lettura di tale file riga per riga
+    //--Leggiamo il file
     while ((getLineBytes = getline(& singleLine, & effectiveLineLength, originalFilePointer)) != -1) {
-        // Controllo della coincidenza tra il codice di tessera sanitaria di input e quelli nel file
+        //--Controlliamo la coincidenza tra il codice di tessera sanitaria di input e quelli nel file
         if ((strncmp((const char *) newServerV_Reply->codiceTesseraSanitaria, (const char *) singleLine, LUNGHEZZA_CODICE_TESSERA_SANITARIA - 1)) == 0) {
-            // Coincidenza esistente
+            //--Se c'è
             codiceTesseraSanitariaWasFound = TRUE;
-            // Salvataggio della data di scadenza del Vannila Green Pass
+            //--Salviamo la data di scadenza del Vannila Green Pass
             strncpy((char *) dateCopiedFromFile, (const char *) singleLine + LUNGHEZZA_CODICE_TESSERA_SANITARIA, LUNGHEZZA_DATA - 1);
             dateCopiedFromFile[LUNGHEZZA_DATA - 1] = '\0';
             break;
@@ -506,9 +477,9 @@ void * clientT_viaServerG_RequestHandler(void * args) {
     }
 
     fclose(originalFilePointer);
-    // Se il codice è stato trovato si può modificare lo stato di validità del Vanilla Green Pass
+    //--Se il codice è stato trovato si può modificare lo stato di validità del Vanilla Green Pass
     if (codiceTesseraSanitariaWasFound) {
-        // Apertura dei due file: l'originale e il temporaneo
+        //--Apriamo i due file: l'originale e il temporaneo
         originalFilePointer = fopen(dataPath, "r");
         tempFilePointer = fopen(tempDataPath, "w");
         if (!originalFilePointer || !tempFilePointer) {
@@ -518,11 +489,11 @@ void * clientT_viaServerG_RequestHandler(void * args) {
             threadAbort(FOPEN_SCOPE, FOPEN_ERROR, threadConnectionFileDescriptor, newServerG_Request, newServerV_Reply, singleLine);
         }
 
-        // salvo nel file serverV.dat il nuovo stato del Vanilla Green Pass + lettura linea per linea del file originale.
+        //--Salviamo nel file serverV.dat il nuovo stato del Vanilla Green Pass + lettura linea per linea del file originale.
         while ((getLineBytes = getline(& singleLine, & effectiveLineLength, originalFilePointer)) != -1) {
             // Se non c'è corrispondenza tra i codici della tessera sanitaria
             if ((strncmp(newServerV_Reply->codiceTesseraSanitaria, singleLine, LUNGHEZZA_CODICE_TESSERA_SANITARIA - 1)) != 0) {
-                // Copia la riga del file "serverV.dat" in "tempServerV.dat"
+                //--Copiamo la riga del file "serverV.dat" in "tempServerV.dat"
                 if (fprintf(tempFilePointer, "%s", singleLine) < 0) {
                     fclose(originalFilePointer);
                     fclose(tempFilePointer);
@@ -532,7 +503,7 @@ void * clientT_viaServerG_RequestHandler(void * args) {
             }
         }
 
-        // Inserimento dei nuovi valori del Vanilla Green Pass modificato nel file temporaneo
+        //--Inseriamo i nuovi valori del Vanilla Green Pass modificato nel file temporaneo
         if (fprintf(tempFilePointer, "%s:%s:%hu\n", newServerV_Reply->codiceTesseraSanitaria, dateCopiedFromFile, newServerG_Request->updateValue) < 0) {
             fclose(originalFilePointer);
             fclose(tempFilePointer);
@@ -543,27 +514,27 @@ void * clientT_viaServerG_RequestHandler(void * args) {
         // updateFile
         fclose(originalFilePointer);
         fclose(tempFilePointer);
-        // Rimozione file originale
+        //--Cancelliamo il file originale
         if (remove(dataPath) != 0) {
             if (pthread_mutex_unlock(& fileSystemAccessMutex) != 0) threadAbort(PTHREAD_MUTEX_UNLOCK_SCOPE, PTHREAD_MUTEX_UNLOCK_ERROR, threadConnectionFileDescriptor, newServerG_Request, newServerV_Reply, singleLine);
             threadAbort(REMOVE_SCOPE, REMOVE_ERROR, threadConnectionFileDescriptor, newServerG_Request, newServerV_Reply, singleLine);
         }
 
-        // Ridenominazione del temporaneo con il nome del file originale
+        //--Ridenominiamo il temporaneo con il nome del file originale
         if (rename(tempDataPath, dataPath) != 0) {
             if (pthread_mutex_unlock(& fileSystemAccessMutex) != 0) threadAbort(PTHREAD_MUTEX_UNLOCK_SCOPE, PTHREAD_MUTEX_UNLOCK_ERROR, threadConnectionFileDescriptor, newServerG_Request, newServerV_Reply, singleLine);
             threadAbort(RENAME_SCOPE, RENAME_ERROR, threadConnectionFileDescriptor, newServerG_Request, newServerV_Reply, singleLine);
         }
 
-        // Creazione del file temporaneo
+        //--Creaiamo il file temporaneo
         tempFilePointer = fopen(tempDataPath, "w+");
         if (!tempFilePointer) {
             if (pthread_mutex_unlock(& fileSystemAccessMutex) != 0) threadAbort(PTHREAD_MUTEX_UNLOCK_SCOPE, PTHREAD_MUTEX_UNLOCK_ERROR, threadConnectionFileDescriptor, newServerG_Request, newServerV_Reply, singleLine);
             threadAbort(FOPEN_SCOPE, FOPEN_ERROR, threadConnectionFileDescriptor, newServerG_Request, newServerV_Reply, singleLine);
         }
-        // Chiusura del file temporaneo
+        //--Chiudiamo il file temporaneo
         fclose(tempFilePointer);
-        // Salvataggio dell'esito della modifica nel pacchetto di risposta
+        //--Salviamo l'esito della modifica nel pacchetto di risposta
         newServerV_Reply->updateResult = TRUE;
         free(singleLine);
     }
@@ -574,7 +545,7 @@ void * clientT_viaServerG_RequestHandler(void * args) {
         threadAbort(FULL_WRITE_SCOPE, (int) fullWriteReturnValue, threadConnectionFileDescriptor, newServerG_Request, newServerV_Reply);
     }
 
-    // Rilascio del mutex
+    //--Rilasciamo il mutex
     if (pthread_mutex_unlock(& fileSystemAccessMutex) != 0) threadAbort(PTHREAD_MUTEX_UNLOCK_SCOPE, PTHREAD_MUTEX_UNLOCK_ERROR, threadConnectionFileDescriptor, newServerG_Request, newServerV_Reply);
     wclose(threadConnectionFileDescriptor);
     free(newServerV_Reply);
@@ -583,12 +554,12 @@ void * clientT_viaServerG_RequestHandler(void * args) {
 }
 
 /*
-Procedura che ha il compito di liberare tutte le risorse allocate mediante memoria dinamica che gli vengono passate
-tramite una lista di puntatori a void di lunghezza variabile. Si tratta infatti di una "variadic function".
+ --Questa procedura si occupa di deallocare tutte le risorse passate tramite una lista di puntatori di lunghezza
+ variabile.
 */
 void threadAbort (char * errorScope, int exitCode, int threadConnectionFileDescriptor, void * arg1, ...) {
     /*
-    Chiude il socket file descriptor di connessione usato dal thread di turno per comunicare col
+    --Chiudiamo il socket file descriptor di connessione usato dal thread di turno per comunicare col
     ServerG o con il CentroVaccinale
     */
     wclose(threadConnectionFileDescriptor);
@@ -597,7 +568,7 @@ void threadAbort (char * errorScope, int exitCode, int threadConnectionFileDescr
     if (arg1 != NULL) {
         free(arg1);
         va_start(argumentsList, arg1);
-        // Liberazione di tutta la memoria dinamica sottoforma di lista di puntatori a void
+        // Deallochiamo tutta la memoria dinamica sottoforma di lista di puntatori a void
         while ((currentElement = va_arg(argumentsList, void *)) != 0) free(currentElement);
         va_end(argumentsList);
     }
