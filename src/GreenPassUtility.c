@@ -3,7 +3,8 @@
 // Controlliamo il formato e lunghezza del codice della tessera Sanitaria
 void checkCodiceTesseraSanitaria (char * codiceTesseraSanitaria) {
     size_t codiceTesseraSanitariaLength = strlen(codiceTesseraSanitaria);
-    if (codiceTesseraSanitariaLength + 1 != LUNGHEZZA_CODICE_TESSERA_SANITARIA) lanciaErrore(CHECK_HEALTH_CARD_NUMBER_SCOPE, CHECK_HEALTH_CARD_NUMBER_ERROR);
+    if (codiceTesseraSanitariaLength + 1 != LUNGHEZZA_CODICE_TESSERA_SANITARIA)
+        lanciaErrore(CHECK_HEALTH_CARD_NUMBER_SCOPE, CHECK_HEALTH_CARD_NUMBER_ERROR);
 }
 
 

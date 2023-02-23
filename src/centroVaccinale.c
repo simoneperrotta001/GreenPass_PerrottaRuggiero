@@ -12,12 +12,14 @@ int main (int argc, char * argv[]) {
     checkUtilizzo(argc, (const char **) argv, NUMERO_PARAMETRI_CENTRO_VACCINALE, messaggioAtteso);
     //--Ricaviamo il numero di porta a partire dal valore passato come parametro da terminale all'avvio del CentroVaccinale
     centroVaccinalePorta = (unsigned short int) strtoul((const char * restrict) argv[1], (char ** restrict) NULL, 10);
-    if (centroVaccinalePorta == 0 && (errno == EINVAL || errno == ERANGE)) lanciaErrore(STRTOUL_SCOPE, STRTOUL_ERROR);
+    if (centroVaccinalePorta == 0 && (errno == EINVAL || errno == ERANGE))
+        lanciaErrore(STRTOUL_SCOPE, STRTOUL_ERROR);
     
     //--Impostiamo la comunicazione col clientUtente
     listenFD = wsocket(AF_INET, SOCK_STREAM, 0);
     //--Durante l'applicazione del meccanismo di IPC via socket impostiamo l'opzione di riutilizzo degli indirizzi
-    if (setsockopt(listenFD, SOL_SOCKET, SO_REUSEADDR, & enable, (socklen_t) sizeof(enable))  == -1) lanciaErrore(SET_SOCK_OPT_SCOPE, SET_SOCK_OPT_ERROR);
+    if (setsockopt(listenFD, SOL_SOCKET, SO_REUSEADDR, & enable, (socklen_t) sizeof(enable))  == -1)
+        lanciaErrore(SET_SOCK_OPT_SCOPE, SET_SOCK_OPT_ERROR);
     memset((void *) & centroVaccinaleIndirizzo, 0, sizeof(centroVaccinaleIndirizzo));
     memset((void *) & client, 0, sizeof(client));
     //--Creiamo il socket per mettere in ascolto il centroVaccinale sulla porta passata come parametro da terminale
@@ -53,16 +55,20 @@ void gestoreRichiesteClientUtente (int connectionFD, int serverV_SFD) {
     centroVaccinaleRispondeAClientUtente * rispostaCentroVaccinale = (centroVaccinaleRispondeAClientUtente *) calloc(1, sizeof(centroVaccinaleRispondeAClientUtente));
     centroVaccinaleRichiedeAServerV * nuovaRichiestaCentroVaccinale = (centroVaccinaleRichiedeAServerV *) calloc(1, sizeof(centroVaccinaleRichiedeAServerV));
     serverVRispondeACentroVaccinale * nuovaRispostaServerV = (serverVRispondeACentroVaccinale *) calloc(1, sizeof(serverVRispondeACentroVaccinale));
-    if (!rispostaCentroVaccinale) lanciaErrore(CALLOC_SCOPE, CALLOC_ERROR);
-    if (!nuovaRichiestaCentroVaccinale) lanciaErrore(CALLOC_SCOPE, CALLOC_ERROR);
-    if (!nuovaRispostaServerV) lanciaErrore(CALLOC_SCOPE, CALLOC_ERROR);
+    if (!rispostaCentroVaccinale)
+        lanciaErrore(CALLOC_SCOPE, CALLOC_ERROR);
+    if (!nuovaRichiestaCentroVaccinale)
+        lanciaErrore(CALLOC_SCOPE, CALLOC_ERROR);
+    if (!nuovaRispostaServerV)
+        lanciaErrore(CALLOC_SCOPE, CALLOC_ERROR);
     
     char buffer[LUNGHEZZA_CODICE_TESSERA_SANITARIA];
     ssize_t fullWriteReturnValue, fullReadReturnValue;
     unsigned short int centroVaccinaleSenderID = centroVaccinaleSender;
     
     // fullRead per la lettura del codice della Tessera Sanitaria
-    if ((fullReadReturnValue = fullRead(connectionFD, (void *) buffer, (size_t) LUNGHEZZA_CODICE_TESSERA_SANITARIA * sizeof(char))) != 0) lanciaErrore(FULL_READ_SCOPE, (int) fullReadReturnValue);
+    if ((fullReadReturnValue = fullRead(connectionFD, (void *) buffer, (size_t) LUNGHEZZA_CODICE_TESSERA_SANITARIA * sizeof(char))) != 0)
+        lanciaErrore(FULL_READ_SCOPE, (int) fullReadReturnValue);
     //--Copiamo il codice della tessera sanitaria nel primo campoo del pacchetto di invio al ServerV.
     strncpy((char *) nuovaRichiestaCentroVaccinale->codiceTesseraSanitaria, (const char *)  buffer, LUNGHEZZA_CODICE_TESSERA_SANITARIA);
     //--Calcoliamo il periodo di validità del    GreenPass
@@ -71,10 +77,13 @@ void gestoreRichiesteClientUtente (int connectionFD, int serverV_SFD) {
     strncpy((char *) nuovaRichiestaCentroVaccinale->dataScadenzaGreenPass, (const char *) dataScadenzaVaccino, LUNGHEZZA_DATA);
     
     // fullWrite per scrivere e inviare il pacchetto al ServerV
-    if ((fullWriteReturnValue = fullWrite(serverV_SFD, (const void *) & centroVaccinaleSenderID, sizeof(centroVaccinaleSenderID))) != 0) lanciaErrore(FULL_WRITE_SCOPE, (int) fullWriteReturnValue);
-    if ((fullWriteReturnValue = fullWrite(serverV_SFD, (const void *) nuovaRichiestaCentroVaccinale, sizeof(* nuovaRichiestaCentroVaccinale))) != 0) lanciaErrore(FULL_WRITE_SCOPE, (int) fullWriteReturnValue);
+    if ((fullWriteReturnValue = fullWrite(serverV_SFD, (const void *) & centroVaccinaleSenderID, sizeof(centroVaccinaleSenderID))) != 0)
+        lanciaErrore(FULL_WRITE_SCOPE, (int) fullWriteReturnValue);
+    if ((fullWriteReturnValue = fullWrite(serverV_SFD, (const void *) nuovaRichiestaCentroVaccinale, sizeof(* nuovaRichiestaCentroVaccinale))) != 0)
+        lanciaErrore(FULL_WRITE_SCOPE, (int) fullWriteReturnValue);
     // fullRead per la rettura e la ricezione del pacchetto di risposta dal ServerV
-    if ((fullReadReturnValue = fullRead(serverV_SFD, (void *) nuovaRispostaServerV, sizeof(* nuovaRispostaServerV))) != 0) lanciaErrore(FULL_READ_SCOPE, (int) fullReadReturnValue);
+    if ((fullReadReturnValue = fullRead(serverV_SFD, (void *) nuovaRispostaServerV, sizeof(* nuovaRispostaServerV))) != 0)
+        lanciaErrore(FULL_READ_SCOPE, (int) fullReadReturnValue);
     
     //--Copiamo i valori di risposta del ServerV nel pacchetto di risposta da parte del centroVaccinale al clientUtente
     strncpy((char *) rispostaCentroVaccinale->codiceTesseraSanitaria, (const char *) nuovaRispostaServerV->codiceTesseraSanitaria, LUNGHEZZA_CODICE_TESSERA_SANITARIA);
@@ -82,7 +91,8 @@ void gestoreRichiesteClientUtente (int connectionFD, int serverV_SFD) {
     rispostaCentroVaccinale->requestResult = nuovaRispostaServerV->requestResult == TRUE ? TRUE : FALSE;
     
     //--Inviamo il pacchetto al clientUtente tramite FullWrite sul descrittore connesso
-    if ((fullWriteReturnValue = fullWrite(connectionFD, (const void *) rispostaCentroVaccinale, (size_t) sizeof(* rispostaCentroVaccinale))) != 0) lanciaErrore(FULL_WRITE_SCOPE, (int) fullWriteReturnValue);
+    if ((fullWriteReturnValue = fullWrite(connectionFD, (const void *) rispostaCentroVaccinale, (size_t) sizeof(* rispostaCentroVaccinale))) != 0)
+        lanciaErrore(FULL_WRITE_SCOPE, (int) fullWriteReturnValue);
     
     free(rispostaCentroVaccinale);
     free(nuovaRichiestaCentroVaccinale);
