@@ -44,7 +44,7 @@ int setupClientS (int argc, char * argv[], char ** codiceTesseraSanitaria) {
     serverGIndrizzo.sin_port   = htons(serverGPorta);
     if (inet_pton(AF_INET, (const char * restrict) stringServerG_IP, (void *) & serverGIndrizzo.sin_addr) <= 0)
         lanciaErrore(INET_PTON_SCOPE, INET_PTON_ERROR);
-    
+    //--Ci connettiamo al serverG per poter effettuare l'eventuale modifica allo stato di validità del GreenPass
     wconnect(serverG_SFD, (struct sockaddr *) & serverGIndrizzo, (socklen_t) sizeof(serverGIndrizzo));
     if (fprintf(stdout, "\nVerifica GreenPass\nNumero tessera sanitaria: %s\n\n... A breve verra' mostrato se il GreenPass inserito risulta essere valido...\n", * codiceTesseraSanitaria) < 0)
         lanciaErrore(FPRINTF_SCOPE, FPRINTF_ERROR);

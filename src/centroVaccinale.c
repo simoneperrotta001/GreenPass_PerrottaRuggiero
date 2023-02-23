@@ -36,7 +36,7 @@ int main (int argc, char * argv[]) {
         if ((childPid = fork()) == -1) {
             lanciaErrore(FORK_SCOPE, FORK_ERROR);
         } else if (childPid == 0) {
-            //Processo figlio che chiude il FD realtivo "all'ascolto" delle nuove connessioni in arrivo per il CentroVaccinale
+            //Processo figlio che chiude il FD realtivo all'ascolto delle nuove connessioni in arrivo per il centroVaccinale
             wclose(listenFD);
             //--Realizziamo un collegamento con il ServerV all'interno del processo figlio generato
             serverV_SFD = creaConnessioneConServerV(percorsoFileConfigurazioneCentroVaccinale);

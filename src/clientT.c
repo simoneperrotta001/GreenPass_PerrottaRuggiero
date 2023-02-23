@@ -7,10 +7,8 @@ int main (int argc, char * argv[]) {
     int nuovoStatoGreenPass, serverG_SFD = setupClientT(argc, argv, & codiceTesseraSanitaria, & nuovoStatoGreenPass);
     codiceTesseraSanitaria[LUNGHEZZA_CODICE_TESSERA_SANITARIA - 1] = '\0';
     
-    /*
-    --Richiamiamo la funzione che permette di mandare la richiesta di riattivazione o l'invalidazione del
-     GreenPass di uno specifico cittadino a partire da un codice di tessera sanitaria fornito.
-    */
+    /*--Richiamiamo la funzione che permette di mandare la richiesta di riattivazione o l'invalidazione del
+     GreenPass di uno specifico cittadino a partire da un codice di tessera sanitaria fornito.*/
     updateGreenPass(serverG_SFD, (const void *) codiceTesseraSanitaria, (const unsigned short int) nuovoStatoGreenPass);
     wclose(serverG_SFD);
     free(codiceTesseraSanitaria);
@@ -34,7 +32,7 @@ int setupClientT (int argc, char * argv[], char ** codiceTesseraSanitaria, int *
         lanciaErrore(INVALID_UPDATE_STATUS_SCOPE, INVALID_UPDATE_STATUS_ERROR);
     
     
-    //-Allochiamo la memoria necessaria per la tessera sanitaria
+    //--Allochiamo la memoria necessaria per la tessera sanitaria
     * codiceTesseraSanitaria = (char *) calloc(LUNGHEZZA_CODICE_TESSERA_SANITARIA, sizeof(char));
     if (! * codiceTesseraSanitaria)
         lanciaErrore(CALLOC_SCOPE, CALLOC_ERROR);
@@ -70,10 +68,8 @@ void updateGreenPass (int serverG_SFD, const void * codiceTesseraSanitaria, cons
     //--Copiamo il codice della tessera sanitaria nel pacchetto di richiesta
     strncpy(nuovaRichiestaClientT->codiceTesseraSanitaria, codiceTesseraSanitaria, LUNGHEZZA_CODICE_TESSERA_SANITARIA);
 
-    /*
-    --Associamo il valore dell'aggiornamento dello stato del GreenPass al secondo parametro del pacchetto, così da,
-     tramite l'interpretazione di questo, capire se convalidare o invalidare il GreenPass
-    */
+    /*--Associamo il valore dell'aggiornamento dello stato del GreenPass al secondo parametro del pacchetto, così da,
+     tramite l'interpretazione di questo, capire se convalidare o invalidare il GreenPass*/
     nuovaRichiestaClientT->updateValue = nuovoStatoGreenPass;
     
     if (fprintf(stdout, "\nLoading...\n") < 0) lanciaErrore(FPRINTF_SCOPE, FPRINTF_ERROR);
@@ -88,10 +84,8 @@ void updateGreenPass (int serverG_SFD, const void * codiceTesseraSanitaria, cons
         lanciaErrore(FULL_READ_SCOPE, (int) fullReadReturnValue);
     
     
-    /*
-    --Analizziamo il valore relativo all'esito dell'aggiornamento: se risulta essere FALSE, allora significa che l'aggiornamento
-     non è andato a buon fine, altrimenti  significa che lo stato di validità del    GreenPass è stato aggiornato correttamente
-    */
+    /*--Analizziamo il valore relativo all'esito dell'aggiornamento: se risulta essere FALSE, allora significa che l'aggiornamento
+     non è andato a buon fine, altrimenti  significa che lo stato di validità del    GreenPass è stato aggiornato correttamente*/
     if (nuovaRispostaServerG->updateResult == FALSE) {
         if (fprintf(stdout, "\nNon siamo riusciti ad aggiornare il GreenPass associato alla tessera sanitaria %s.\n", nuovaRispostaServerG->codiceTesseraSanitaria) < 0) lanciaErrore(FPRINTF_SCOPE, FPRINTF_ERROR);
     } else {

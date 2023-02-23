@@ -6,8 +6,7 @@ int main (int argc, char * argv[]) {
     int centroVaccinaleSFD = setupclientUtente(argc, argv, & codiceTesseraSanitaria);
     codiceTesseraSanitaria[LUNGHEZZA_CODICE_TESSERA_SANITARIA - 1] = '\0';
 
-    /*
-     --Effettuiamo la richiesta di vaccinazione ricevendo quindi il Greenpass. I parametri della funzione sono:
+    /*--Effettuiamo la richiesta di vaccinazione ricevendo quindi il Greenpass. I parametri della funzione sono:
     -Il socket file descriptor del centroVaccinale;
     -Il codice della tessera sanitaria;
     -La lunghezza del codice della tessera, ovvero 16;*/
@@ -45,7 +44,7 @@ int setupclientUtente (int argc, char * argv[], char ** codiceTesseraSanitaria) 
     centroVaccinaleIndirizzo.sin_port   = htons(centroVaccinalePorta);
     if (inet_pton(AF_INET, (const char * restrict) stringcentroVaccinaleIndirizzoIP, (void *) & centroVaccinaleIndirizzo.sin_addr) <= 0)
         lanciaErrore(INET_PTON_SCOPE, INET_PTON_ERROR);
-    
+    //--Ci connettiamo al centroVaccinale per effettuare la somministrazione del vaccino e ricevere il GreenPass
     wconnect(centroVaccinaleSFD, (struct sockaddr *) & centroVaccinaleIndirizzo, (socklen_t) sizeof(centroVaccinaleIndirizzo));
     if (fprintf(stdout, "\nCiao e benvenuto al centro vaccinale.\n  Il tuo numero di tessera sanitaria e': %s\n Ora ti verra' somministrato il vaccino.\n", * codiceTesseraSanitaria) < 0)
         lanciaErrore(FPRINTF_SCOPE, FPRINTF_ERROR);
@@ -70,8 +69,7 @@ void somministraVaccinazione (int centroVaccinaleSFD, const void * codiceTessera
         lanciaErrore(FULL_READ_SCOPE, (int) fullReadReturnValue);
     
 
-    /*
-    --Verifihciamo la risposta e se conterrà come terzo parametro un valore FALSE allora non è stato possibile
+    /*--Verifihciamo la risposta e se conterrà come terzo parametro un valore FALSE allora non è stato possibile
     somministrare una nuova dose di vaccino, in quanto non è passato abbastanza tempo da superare la soglia
     minima per effettuare una nuova vaccinazione. Se invece il valore del terzo campo sarà TRUE, allora
     significa che la vaccinazione è andata a buon fine.
