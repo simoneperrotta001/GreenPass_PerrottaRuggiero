@@ -6,26 +6,26 @@ int main (int argc, char * argv[]) {
     unsigned short int serverG_Port, requestIdentifier;
     pid_t childPid;
     
-    // Si verifica che il ServerG sia stato avviato con i parametri che si aspetta di avere.
+    //--Verifichiamo che il ServerG sia stato avviato con i parametri che si aspetta di avere.
     checkUsage(argc, (const char **) argv, SERVER_G_ARGS_NO, messaggioAtteso);
-    // Si cerca di ricavare il numero di porta a partire dal valore passato come argomento via terminale all'avvio del ServerG
+    //--Ricaviamo il numero di porta a partire dal valore passato come argomento via terminale all'avvio del ServerG
     serverG_Port = (unsigned short int) strtoul((const char * restrict) argv[1], (char ** restrict) NULL, 10);
-    //Se questo valore non dovesse essere valido viene lanciato un errore
+    //--Richiamiamo un errore se questo valore non dovesse essere valido
     if (serverG_Port == 0 && (errno == EINVAL || errno == ERANGE)) raiseError(STRTOUL_SCOPE, STRTOUL_ERROR);
     
-    // Si imposta la comunicazione col clientS e clientT
+    //--Impostiamo la comunicazione col clientS e clientT
     listenFileDescriptor = wsocket(AF_INET, SOCK_STREAM, 0);
     if (setsockopt(listenFileDescriptor, SOL_SOCKET, SO_REUSEADDR, & enable, (socklen_t) sizeof(enable)) == -1) raiseError(SET_SOCK_OPT_SCOPE, SET_SOCK_OPT_ERROR);
-    //Vengono impostati a 0 i byte di serverG_Address e client
+    //--Impostiamo a 0 i byte di serverG_Address e client
     memset((void *) & serverG_Address, 0, sizeof(serverG_Address));
     memset((void *) & client, 0, sizeof(client));
-    //Inizializzazione dei campi della struct sockaddr_in
+    //..Inizializziamo i campi della struct sockaddr_in
     serverG_Address.sin_family      = AF_INET;//utilizziamo protoccolo iPv4
     serverG_Address.sin_addr.s_addr = htonl(INADDR_ANY);//accetta le richieste da qualsiasi indirizzo
     serverG_Address.sin_port        = htons(serverG_Port);//inizializzazione della porta
     //Impostazione dei campi (comprese le porte) del serverG_Address
     wbind(listenFileDescriptor, (struct sockaddr *) & serverG_Address, (socklen_t) sizeof(serverG_Address));
-    //Mettiamo il serverG in ascolto sulla socket creata
+    //--Mettiamo il serverG in ascolto sulla socket creata
     wlisten(listenFileDescriptor, LISTEN_QUEUE_SIZE * LISTEN_QUEUE_SIZE);
     signal(SIGCHLD, SIG_IGN);
     
@@ -33,7 +33,7 @@ int main (int argc, char * argv[]) {
         ssize_t fullReadReturnValue;
         socklen_t clientAddressLength = (socklen_t) sizeof(client);
         while ((connectionFileDescriptor = waccept(listenFileDescriptor, (struct sockaddr *) & client, (socklen_t *) & clientAddressLength)) < 0 && (errno == EINTR));
-        // Attesa tramite fullRead dell'identificativo del mittente col quale si è messo in collegamento.
+        //--Attendiamo tramite fullRead l'identificativo del mittente col quale si è messo in collegamento.
         if ((fullReadReturnValue = fullRead(connectionFileDescriptor, (void *) & requestIdentifier, sizeof(requestIdentifier))) != 0) raiseError(FULL_READ_SCOPE, (int) fullReadReturnValue);
         
         if ((childPid = fork()) == -1) {
@@ -44,7 +44,7 @@ int main (int argc, char * argv[]) {
             // Richiesta di instaurare una connessione con il ServerV
             serverV_SFD = createConnectionWithServerV(percorsoFileConfigurazioneServerG);
             
-            // Controllo dell'ID del mittente (ClientS o ClientT).
+            //--Controlliamo l'ID del mittente (ClientS o ClientT).
             switch (requestIdentifier) {
                 // ClientS
                 case clientS_viaServerG_Sender:
@@ -69,17 +69,13 @@ int main (int argc, char * argv[]) {
     }
 }
 
-/*
-Procedura per la gestione del servizio con un ClientS. I paraetri di ingresso sono: il socket file
-descriptor col quale è possibile comunicare con un ClientS o un ClientT e il socket file descriptor col
-quale è possibile comunicare con il ServerV.
-*/
+//--Questa procedura si occupa della gestione del servizio con un ClientS
 void clientS_RequestHandler (int connectionFileDescriptor, int serverV_SFD) {
     char codiceTesseraSanitaria[LUNGHEZZA_CODICE_TESSERA_SANITARIA];
     ssize_t fullWriteReturnValue, fullReadReturnValue;
     unsigned short int clientS_viaServerG_SenderID = clientS_viaServerG_Sender;
     
-    // Allocazione dinamica della memoria per il pacchetto da inviare al ClientS e quello da ricevere dal ServerV.
+    //--Allochiamo dinamicamente la memoria necessaria per il pacchetto da inviare al ClientS e quello da ricevere dal ServerV.
     serverG_ReplyToClientS * newServerG_Reply = (serverG_ReplyToClientS *) calloc(1, sizeof(* newServerG_Reply));
     serverV_ReplyToServerG_clientS * newServerV_Reply = (serverV_ReplyToServerG_clientS *) calloc(1, sizeof(* newServerV_Reply));
     if (!newServerG_Reply) raiseError(CALLOC_SCOPE, CALLOC_ERROR);
@@ -94,7 +90,7 @@ void clientS_RequestHandler (int connectionFileDescriptor, int serverV_SFD) {
     if ((fullReadReturnValue = fullRead(serverV_SFD, (void *) newServerV_Reply, sizeof(* newServerV_Reply))) != 0) raiseError(FULL_READ_SCOPE, (int) fullReadReturnValue);
     
     
-    // Copia dei parametri del pacchetto di risposta del ServerV nel pacchetto da inviare al ClientS
+    // Copiamo i parametri del pacchetto di risposta del ServerV nel pacchetto da inviare al ClientS
     strncpy((char *) newServerG_Reply->codiceTesseraSanitaria, (const char *) newServerV_Reply->codiceTesseraSanitaria, LUNGHEZZA_CODICE_TESSERA_SANITARIA);
     newServerG_Reply->requestResult = newServerV_Reply->requestResult;
     // fullWrite per inviare il pacchetto al ClientS.
@@ -108,7 +104,7 @@ void clientT_RequestHandler (int connectionFileDescriptor, int serverV_SFD) {
     ssize_t fullWriteReturnValue, fullReadReturnValue;
     
     /*
-     Allocazione dinamica della memoria per il pacchetto da ricevere dal ClientT, quello da inviare al ClientT,
+     Allochiamo dinamicamente la memoria  necessaria per il pacchetto da ricevere dal ClientT, quello da inviare al ClientT,
      quello da inviare al ServerV e quello da ricevere dal ServerV.
     */
     clientT_RequestToServerG * newClientT_Request = (clientT_RequestToServerG *) calloc(1, sizeof(* newClientT_Request));
