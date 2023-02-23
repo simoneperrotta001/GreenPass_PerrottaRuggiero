@@ -60,22 +60,22 @@ void somministraVaccinazione (int centroVaccinaleSFD, const void * codiceTessera
     if (!rispostaCentroVaccinale)
         lanciaErrore(CALLOC_SCOPE, CALLOC_ERROR);
     
-    //fullWrite per la scrittura e invio del codice della tessera sanitaria al Centro Vaccinale
+    //fullWrite per la scrittura e invio del codice della tessera sanitaria al centroVaccinale
     if ((fullWriteReturnValue = fullWrite(centroVaccinaleSFD, codiceTesseraSanitaria, lunghezzaCodiceTessera)) != 0)
         lanciaErrore(FULL_WRITE_SCOPE, (int) fullWriteReturnValue);
 
-    /*fullRead per ottenere e leggere la risposta da parte del CentroVaccinale. Avremo come risposta una serie
+    /*fullRead per ottenere e leggere la risposta da parte del centroVaccinale. Avremo come risposta una serie
     di parametri: Codice Tessera Sanitaria, Data Scadenza GreenPass ed esito della richiesta.*/
     if ((fullReadReturnValue = fullRead(centroVaccinaleSFD, (void *) rispostaCentroVaccinale, sizeof(* rispostaCentroVaccinale))) != 0)
         lanciaErrore(FULL_READ_SCOPE, (int) fullReadReturnValue);
     
 
     /*
-    --Verifihciamo se la risposta conterrà come terzo parametro un valore FALSE allora non è stato possibile
+    --Verifihciamo la risposta e se conterrà come terzo parametro un valore FALSE allora non è stato possibile
     somministrare una nuova dose di vaccino, in quanto non è passato abbastanza tempo da superare la soglia
     minima per effettuare una nuova vaccinazione. Se invece il valore del terzo campo sarà TRUE, allora
     significa che la vaccinazione è andata a buon fine.
-    Successivamente attraverso il clientUtente liberiamo la memoria occupata, rilascia le risorse e chiude il socket file descriptor richiesto in precedenza.*/
+    Successivamente attraverso il clientUtente liberiamo la memoria occupata, rilasciamo le risorse e chiudiamo il socket file descriptor richiesto in precedenza.*/
     if (rispostaCentroVaccinale->requestResult == FALSE) {
         if (fprintf(stdout, "\nNon può al momento ricevere un'altra somministrazione di vaccino. \n E' necessario che passino altri %d mesi dall'ultima somministrazione.\nLa data a partire dalla quale può effettuare l'ulteriore somministrazione e': %s\n", MESI_ATTESA_PROSSIMA_SOMMINISTRAZIONE, rispostaCentroVaccinale->dataScadenzaGreenPass) < 0)
             lanciaErrore(FPRINTF_SCOPE, FPRINTF_ERROR);
