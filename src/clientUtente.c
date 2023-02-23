@@ -65,8 +65,7 @@ void somministraVaccinazione (int centroVaccinaleSFD, const void * codiceTessera
         lanciaErrore(FULL_WRITE_SCOPE, (int) fullWriteReturnValue);
 
     /*fullRead per ottenere e leggere la risposta da parte del CentroVaccinale. Avremo come risposta una serie
-    di parametri: Codice Tessera Sanitaria, Data Scadenza GreenPass ed esito della richiesta.
-    La risposta verrà salvata in "rispostaCentroVaccinale".*/
+    di parametri: Codice Tessera Sanitaria, Data Scadenza GreenPass ed esito della richiesta.*/
     if ((fullReadReturnValue = fullRead(centroVaccinaleSFD, (void *) rispostaCentroVaccinale, sizeof(* rispostaCentroVaccinale))) != 0)
         lanciaErrore(FULL_READ_SCOPE, (int) fullReadReturnValue);
     

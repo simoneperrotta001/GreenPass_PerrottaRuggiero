@@ -37,14 +37,17 @@ int setupClientS (int argc, char * argv[], char ** codiceTesseraSanitaria) {
     
     //--Ricaviamo i parametri fondamentali per contattare il CentroVaccinale
     ritornaDatiDiConfigurazione(percorsoFileConfigurazione, & stringServerG_IP, & serverGPorta);
+    //--Creiamo il socket per la comunicazione con serverG
     serverG_SFD = wsocket(AF_INET, SOCK_STREAM, 0);
     memset((void *) & serverGIndrizzo, 0, sizeof(serverGIndrizzo));
     serverGIndrizzo.sin_family = AF_INET;
     serverGIndrizzo.sin_port   = htons(serverGPorta);
-    if (inet_pton(AF_INET, (const char * restrict) stringServerG_IP, (void *) & serverGIndrizzo.sin_addr) <= 0) lanciaErrore(INET_PTON_SCOPE, INET_PTON_ERROR);
+    if (inet_pton(AF_INET, (const char * restrict) stringServerG_IP, (void *) & serverGIndrizzo.sin_addr) <= 0)
+        lanciaErrore(INET_PTON_SCOPE, INET_PTON_ERROR);
     
     wconnect(serverG_SFD, (struct sockaddr *) & serverGIndrizzo, (socklen_t) sizeof(serverGIndrizzo));
-    if (fprintf(stdout, "\nVerifica GreenPass\nNumero tessera sanitaria: %s\n\n... A breve verra' mostrato se il GreenPass inserito risulta essere valido...\n", * codiceTesseraSanitaria) < 0) lanciaErrore(FPRINTF_SCOPE, FPRINTF_ERROR);
+    if (fprintf(stdout, "\nVerifica GreenPass\nNumero tessera sanitaria: %s\n\n... A breve verra' mostrato se il GreenPass inserito risulta essere valido...\n", * codiceTesseraSanitaria) < 0)
+        lanciaErrore(FPRINTF_SCOPE, FPRINTF_ERROR);
     free(stringServerG_IP);
     return serverG_SFD;
 }
@@ -55,18 +58,21 @@ void checkGreenPass (int serverG_SFD, const void * codiceTesseraSanitaria, size_
     
     //--Allochiamo la memoria per il pacchetto di risposta del ServerG.
     serverGRispondeAClientS * nuovaRispostaServerG = (serverGRispondeAClientS *) calloc(1, sizeof(* nuovaRispostaServerG));
-    if (!nuovaRispostaServerG) lanciaErrore(CALLOC_SCOPE, CALLOC_ERROR);
+    if (!nuovaRispostaServerG)
+        lanciaErrore(CALLOC_SCOPE, CALLOC_ERROR);
     
     if (fprintf(stdout, "\n... Verifica in corso ...\n") < 0) lanciaErrore(FPRINTF_SCOPE, FPRINTF_ERROR);
     // fullWrite per la scrittura e invio dell'ID del ClientS al ServerG.
-    if ((fullWriteReturnValue = fullWrite(serverG_SFD, (const void *) & clientS_SenderID, sizeof(clientS_SenderID))) != 0) lanciaErrore(FULL_WRITE_SCOPE, (int) fullWriteReturnValue);
+    if ((fullWriteReturnValue = fullWrite(serverG_SFD, (const void *) & clientS_SenderID, sizeof(clientS_SenderID))) != 0)
+        lanciaErrore(FULL_WRITE_SCOPE, (int) fullWriteReturnValue);
     // fullWrite per la scrittura e invio del codice di tessera sanitaria del ClientS al ServerG.
     if ((fullWriteReturnValue = fullWrite(serverG_SFD, codiceTesseraSanitaria, nBytes)) != 0) lanciaErrore(FULL_WRITE_SCOPE, (int) fullWriteReturnValue);
 
     /*fullRead per ottenere e leggere la risposta da parte del ServerG. Tale risposta è caratterizzata da una
     serie di parametri: Codice Tessera Sanitaria ed esito della verifica del  GreenPass associato
-    (se esistente). La risposta verrà salvata nel file "nuovaRispostaServerG".*/
-    if ((fullReadReturnValue = fullRead(serverG_SFD, (void *) nuovaRispostaServerG, sizeof(* nuovaRispostaServerG))) != 0) lanciaErrore(FULL_READ_SCOPE, (int) fullReadReturnValue);
+    (se esistente).*/
+    if ((fullReadReturnValue = fullRead(serverG_SFD, (void *) nuovaRispostaServerG, sizeof(* nuovaRispostaServerG))) != 0)
+        lanciaErrore(FULL_READ_SCOPE, (int) fullReadReturnValue);
 
     /*
     --Effettuiamo un ultimo controllo su quest'ultimo parametro: se è FALSE, allora non esiste un codice di tessera
@@ -75,9 +81,11 @@ void checkGreenPass (int serverG_SFD, const void * codiceTesseraSanitaria, size_
     risposta è TRUE, significa che il    GreenPass associato è valido.
     */
     if (nuovaRispostaServerG->requestResult == FALSE) {
-        if (fprintf(stdout, "\nLa tessera sanitaria immessa non risulta essere associata a un GreenPass attualmente valido.\n") < 0) lanciaErrore(FPRINTF_SCOPE, FPRINTF_ERROR);
+        if (fprintf(stdout, "\nLa tessera sanitaria immessa non risulta essere associata a un GreenPass attualmente valido.\n") < 0)
+            lanciaErrore(FPRINTF_SCOPE, FPRINTF_ERROR);
     } else {
-        if (fprintf(stdout, "\nLa tessera sanitaria immessa risulta essere associata a un GreenPass attualmente valido.\n") < 0) lanciaErrore(FPRINTF_SCOPE, FPRINTF_ERROR);
+        if (fprintf(stdout, "\nLa tessera sanitaria immessa risulta essere associata a un GreenPass attualmente valido.\n") < 0)
+            lanciaErrore(FPRINTF_SCOPE, FPRINTF_ERROR);
     }
     free(nuovaRispostaServerG);
 }
