@@ -107,7 +107,7 @@ void clientT_RequestHandler (int connectionFD, int serverV_SFD) {
      Allochiamo dinamicamente la memoria  necessaria per il pacchetto da ricevere dal ClientT, quello da inviare al ClientT,
      quello da inviare al ServerV e quello da ricevere dal ServerV.
     */
-    clientT_RequestToServerG * nuovaRichiestaClientT = (clientT_RequestToServerG *) calloc(1, sizeof(* nuovaRichiestaClientT));
+    clientTRichiedeAServerG * nuovaRichiestaClientT = (clientTRichiedeAServerG *) calloc(1, sizeof(* nuovaRichiestaClientT));
     serverGRispondeAClientT * nuovaRispostaServerG = (serverGRispondeAClientT *) calloc(1, sizeof(* nuovaRispostaServerG));
     serverG_RequestToServerV_onBehalfOfClientT * newServerG_Request = (serverG_RequestToServerV_onBehalfOfClientT *) calloc(1, sizeof(* newServerG_Request));
     serverV_ReplyToServerG_clientT * nuovaRispostaServerV = (serverV_ReplyToServerG_clientT *) calloc(1, sizeof(* nuovaRispostaServerV));

@@ -43,9 +43,9 @@ int setupClientT (int argc, char * argv[], char ** codiceTesseraSanitaria, int *
     serverGIndrizzo.sin_family = AF_INET;
     serverGIndrizzo.sin_port   = htons(serverGPorta);
     if (inet_pton(AF_INET, (const char * restrict) stringServerG_IP, (void *) & serverGIndrizzo.sin_addr) <= 0) lanciaErrore(INET_PTON_SCOPE, INET_PTON_ERROR);
-    
+    //--Ci connettiamo al ServerG per effettuare la modifica allo stato di validità del GreenPass associato al codice di tessera passato da terminale
     wconnect(serverG_SFD, (struct sockaddr *) & serverGIndrizzo, (socklen_t) sizeof(serverGIndrizzo));
-    if (fprintf(stdout, "\nAggiornamento Validita' GreenPass\nNumero tessera sanitaria: %s\n\n... A breve verra' inviato il nuovo stato di validita' del  GreenPass...\n", * codiceTesseraSanitaria) < 0) lanciaErrore(FPRINTF_SCOPE, FPRINTF_ERROR);
+    if (fprintf(stdout, "\nAggiornamento Validita' GreenPass\nCodice tessera sanitaria: %s\nAggiornamento in corso...\n", * codiceTesseraSanitaria) < 0) lanciaErrore(FPRINTF_SCOPE, FPRINTF_ERROR);
     free(stringServerG_IP);
     return serverG_SFD;
 }
@@ -56,7 +56,7 @@ void updateGreenPass (int serverG_SFD, const void * codiceTesseraSanitaria, cons
     //--Allochiamo la memoria per il pacchetto di risposta del ServerG
     serverGRispondeAClientT * nuovaRispostaServerG = (serverGRispondeAClientT *) calloc(1, sizeof(* nuovaRispostaServerG));
     //--Allochiamo la memoria per il pacchetto di richiesta da parte del ClientT al ServerG
-    clientT_RequestToServerG * nuovaRichiestaClientT = (clientT_RequestToServerG *) calloc(1, sizeof(* nuovaRichiestaClientT));
+    clientTRichiedeAServerG * nuovaRichiestaClientT = (clientTRichiedeAServerG *) calloc(1, sizeof(* nuovaRichiestaClientT));
     if (!nuovaRispostaServerG) lanciaErrore(CALLOC_SCOPE, CALLOC_ERROR);
     if (!nuovaRichiestaClientT) lanciaErrore(CALLOC_SCOPE, CALLOC_ERROR);
 
@@ -64,17 +64,17 @@ void updateGreenPass (int serverG_SFD, const void * codiceTesseraSanitaria, cons
     strncpy(nuovaRichiestaClientT->codiceTesseraSanitaria, codiceTesseraSanitaria, LUNGHEZZA_CODICE_TESSERA_SANITARIA);
 
     /*
-    --Associamo il valore dell'aggiornamento al secondo parametro del pacchetto di richiesta per
-    decidere se convalidare o invalidare il    GreenPass
+    --Associamo il valore dell'aggiornamento dello stato del GreenPass al secondo parametro del pacchetto, così da,
+     tramite l'interpretazione di questo, capire se convalidare o invalidare il GreenPass
     */
     nuovaRichiestaClientT->updateValue = nuovoStatoGreenPass;
     
     if (fprintf(stdout, "\nLoading...\n") < 0) lanciaErrore(FPRINTF_SCOPE, FPRINTF_ERROR);
-    // fullWrite per inviare "ClientT_SenderID"
+    //--fullWrite per inviare "ClientT_SenderID"
     if ((fullWriteReturnValue = fullWrite(serverG_SFD, (const void *) & clientT_SenderID, sizeof(clientT_SenderID))) != 0) lanciaErrore(FULL_WRITE_SCOPE, (int) fullWriteReturnValue);
-    // fullWrite per inviare il pacchetto "nuovaRichiestaClientT"
+    //--fullWrite per inviare il pacchetto "nuovaRichiestaClientT"
     if ((fullWriteReturnValue = fullWrite(serverG_SFD, (const void *) nuovaRichiestaClientT, sizeof(* nuovaRichiestaClientT))) != 0) lanciaErrore(FULL_WRITE_SCOPE, (int) fullWriteReturnValue);
-    // fullRead per aspettare e successivamente leggere la risposta da parte del ServerG.
+    //--fullRead per aspettare e successivamente leggere la risposta da parte del ServerG
     if ((fullReadReturnValue = fullRead(serverG_SFD, (void *) nuovaRispostaServerG, sizeof(* nuovaRispostaServerG))) != 0) lanciaErrore(FULL_READ_SCOPE, (int) fullReadReturnValue);
     
     

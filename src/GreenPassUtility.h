@@ -61,7 +61,7 @@ typedef struct {
 typedef struct {
     char codiceTesseraSanitaria[LUNGHEZZA_CODICE_TESSERA_SANITARIA];
     unsigned short int updateValue;
-} clientT_RequestToServerG;
+} clientTRichiedeAServerG;
 
 typedef struct {
     char codiceTesseraSanitaria[LUNGHEZZA_CODICE_TESSERA_SANITARIA];
