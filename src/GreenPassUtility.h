@@ -25,18 +25,18 @@ typedef struct {
     char codiceTesseraSanitaria[LUNGHEZZA_CODICE_TESSERA_SANITARIA];
     char dataScadenzaGreenPass[LUNGHEZZA_DATA];
     unsigned short int requestResult;
-} centroVaccinaleReplyToclientUtente;
+} centroVaccinaleRispondeAClientUtente;
 
 typedef struct {
     char codiceTesseraSanitaria[LUNGHEZZA_CODICE_TESSERA_SANITARIA];
     char dataScadenzaGreenPass[LUNGHEZZA_DATA];
-} centroVaccinaleRequestToServerV;
+} centroVaccinaleRichiedeAServerV;
 
 typedef struct {
     char codiceTesseraSanitaria[LUNGHEZZA_CODICE_TESSERA_SANITARIA];
     char dataScadenzaGreenPass[LUNGHEZZA_DATA];
     unsigned short int requestResult;
-} serverV_ReplyToCentroVaccinale;
+} serverVRispondeACentroVaccinale;
 
 typedef struct {
     char codiceTesseraSanitaria[LUNGHEZZA_CODICE_TESSERA_SANITARIA];
@@ -74,10 +74,10 @@ enum sender {
     clientT_viaServerG_Sender
 };
 
-void checkHealtCardNumber           (char * codiceTesseraSanitaria);
-void retrieveConfigurationData      (const char * percorsoFileConfigurazione, char ** configurationIP, unsigned short int * configurationPort);
-char * getVaccineExpirationDate     (void );
+void checkCodiceTesseraSanitaria           (char * codiceTesseraSanitaria);
+void ritornaDatiDiConfigurazione      (const char * percorsoFileConfigurazione, char ** configurationIP, unsigned short int * configurationPort);
+char * getdataScadenzaVaccino     (void );
 char * getNowDate                   (void );
-int createConnectionWithServerV     (const char * percorsoFileConfigurazione);
+int creaConnessioneConServerV     (const char * percorsoFileConfigurazione);
 
 #endif /* GreenPassUtility_h */

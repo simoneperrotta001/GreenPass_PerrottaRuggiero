@@ -24,28 +24,28 @@ int setupclientUtente (int argc, char * argv[], char ** codiceTesseraSanitaria) 
     unsigned short int centroVaccinalePorta;
     
     //--Verifichiamo che il clientUtente sia stato avviato con i parametri corretti
-    checkUsage(argc, (const char **) argv, NUMERO_PARAMETRI_CLIENT_CITIZEN, messaggioAtteso);
+    checkUtilizzo(argc, (const char **) argv, NUMERO_PARAMETRI_CLIENT_CITIZEN, messaggioAtteso);
     //--Verichiamo che il codice di tessera sanitaria immesso sia del formato e della lunghezza giusta
-    checkHealtCardNumber(argv[1]);
+    checkCodiceTesseraSanitaria(argv[1]);
 
     //--Allochiamo memoria per il codice di tessera sanitaria
     * codiceTesseraSanitaria = (char *) calloc(LUNGHEZZA_CODICE_TESSERA_SANITARIA, sizeof(char));
-    if (! * codiceTesseraSanitaria) raiseError(CALLOC_SCOPE, CALLOC_ERROR);
+    if (! * codiceTesseraSanitaria) lanciaErrore(CALLOC_SCOPE, CALLOC_ERROR);
 
     //--Copiamo il valore passato dal terminale nel codiceTesseraSanitaria
     strncpy(* codiceTesseraSanitaria, (const char *) argv[1], LUNGHEZZA_CODICE_TESSERA_SANITARIA - 1);
 
     //--Ricaviamo i parametri  per contattare il CentroVaccinale.
-    retrieveConfigurationData(percorsoFileConfigurazione, & stringcentroVaccinaleIndirizzoIP, & centroVaccinalePorta);
+    ritornaDatiDiConfigurazione(percorsoFileConfigurazione, & stringcentroVaccinaleIndirizzoIP, & centroVaccinalePorta);
     
     centroVaccinaleSFD = wsocket(AF_INET, SOCK_STREAM, 0);
     memset((void *) & centroVaccinaleIndirizzo, 0, sizeof(centroVaccinaleIndirizzo));
     centroVaccinaleIndirizzo.sin_family = AF_INET;
     centroVaccinaleIndirizzo.sin_port   = htons(centroVaccinalePorta);
-    if (inet_pton(AF_INET, (const char * restrict) stringcentroVaccinaleIndirizzoIP, (void *) & centroVaccinaleIndirizzo.sin_addr) <= 0) raiseError(INET_PTON_SCOPE, INET_PTON_ERROR);
+    if (inet_pton(AF_INET, (const char * restrict) stringcentroVaccinaleIndirizzoIP, (void *) & centroVaccinaleIndirizzo.sin_addr) <= 0) lanciaErrore(INET_PTON_SCOPE, INET_PTON_ERROR);
     
     wconnect(centroVaccinaleSFD, (struct sockaddr *) & centroVaccinaleIndirizzo, (socklen_t) sizeof(centroVaccinaleIndirizzo));
-    if (fprintf(stdout, "\nCiao e benvenuto al centro vaccinale.\n  Il tuo numero di tessera sanitaria e': %s\n Ora ti verra' somministrato il vaccino.\n", * codiceTesseraSanitaria) < 0) raiseError(FPRINTF_SCOPE, FPRINTF_ERROR);
+    if (fprintf(stdout, "\nCiao e benvenuto al centro vaccinale.\n  Il tuo numero di tessera sanitaria e': %s\n Ora ti verra' somministrato il vaccino.\n", * codiceTesseraSanitaria) < 0) lanciaErrore(FPRINTF_SCOPE, FPRINTF_ERROR);
     free(stringcentroVaccinaleIndirizzoIP);
     return centroVaccinaleSFD;
 }
@@ -53,16 +53,16 @@ int setupclientUtente (int argc, char * argv[], char ** codiceTesseraSanitaria) 
 void somministraVaccinazione (int centroVaccinaleSFD, const void * codiceTesseraSanitaria, size_t lunghezzaCodiceTessera) {
     ssize_t fullWriteReturnValue, fullReadReturnValue;
     //--Allochiamo memoria per il pacchetto di risposta del centroVaccinale
-    centroVaccinaleReplyToclientUtente * rispostaCentroVaccinale = (centroVaccinaleReplyToclientUtente *) calloc(1, sizeof(* rispostaCentroVaccinale));
-    if (!rispostaCentroVaccinale) raiseError(CALLOC_SCOPE, CALLOC_ERROR);
+    centroVaccinaleRispondeAClientUtente * rispostaCentroVaccinale = (centroVaccinaleRispondeAClientUtente *) calloc(1, sizeof(* rispostaCentroVaccinale));
+    if (!rispostaCentroVaccinale) lanciaErrore(CALLOC_SCOPE, CALLOC_ERROR);
     
     //fullWrite per la scrittura e invio del codice della tessera sanitaria al Centro Vaccinale
-    if ((fullWriteReturnValue = fullWrite(centroVaccinaleSFD, codiceTesseraSanitaria, lunghezzaCodiceTessera)) != 0) raiseError(FULL_WRITE_SCOPE, (int) fullWriteReturnValue);
+    if ((fullWriteReturnValue = fullWrite(centroVaccinaleSFD, codiceTesseraSanitaria, lunghezzaCodiceTessera)) != 0) lanciaErrore(FULL_WRITE_SCOPE, (int) fullWriteReturnValue);
 
     /*fullRead per ottenere e leggere la risposta da parte del CentroVaccinale. Avremo come risposta una serie
     di parametri: Codice Tessera Sanitaria, Data Scadenza GreenPass ed esito della richiesta.
     La risposta verrà salvata in "rispostaCentroVaccinale".*/
-    if ((fullReadReturnValue = fullRead(centroVaccinaleSFD, (void *) rispostaCentroVaccinale, sizeof(* rispostaCentroVaccinale))) != 0) raiseError(FULL_READ_SCOPE, (int) fullReadReturnValue);
+    if ((fullReadReturnValue = fullRead(centroVaccinaleSFD, (void *) rispostaCentroVaccinale, sizeof(* rispostaCentroVaccinale))) != 0) lanciaErrore(FULL_READ_SCOPE, (int) fullReadReturnValue);
     
 
     /*
@@ -72,9 +72,9 @@ void somministraVaccinazione (int centroVaccinaleSFD, const void * codiceTessera
     significa che la vaccinazione è andata a buon fine.
     Successivamente attraverso il clientUtente liberiamo la memoria occupata, rilascia le risorse e chiude il socket file descriptor richiesto in precedenza.*/
     if (rispostaCentroVaccinale->requestResult == FALSE) {
-        if (fprintf(stdout, "\nNon può al momento ricevere un'altra somministrazione di vaccino. \n E' necessario che passino altri %d mesi dall'ultima somministrazione.\nLa data a partire dalla quale può effettuare l'ulteriore somministrazione e': %s\n", MESI_ATTESA_PROSSIMA_SOMMINISTRAZIONE, rispostaCentroVaccinale->dataScadenzaGreenPass) < 0) raiseError(FPRINTF_SCOPE, FPRINTF_ERROR);
+        if (fprintf(stdout, "\nNon può al momento ricevere un'altra somministrazione di vaccino. \n E' necessario che passino altri %d mesi dall'ultima somministrazione.\nLa data a partire dalla quale può effettuare l'ulteriore somministrazione e': %s\n", MESI_ATTESA_PROSSIMA_SOMMINISTRAZIONE, rispostaCentroVaccinale->dataScadenzaGreenPass) < 0) lanciaErrore(FPRINTF_SCOPE, FPRINTF_ERROR);
     } else {
-        if (fprintf(stdout, "\nVaccinazione effettuata con successo.\nLa data a partire dalla quale puoi effettuare l'ulteriore somministrazione e': %s\nArrivederci.\n", rispostaCentroVaccinale->dataScadenzaGreenPass) < 0) raiseError(FPRINTF_SCOPE, FPRINTF_ERROR);
+        if (fprintf(stdout, "\nVaccinazione effettuata con successo.\nLa data a partire dalla quale puoi effettuare l'ulteriore somministrazione e': %s\nArrivederci.\n", rispostaCentroVaccinale->dataScadenzaGreenPass) < 0) lanciaErrore(FPRINTF_SCOPE, FPRINTF_ERROR);
     }
     free(rispostaCentroVaccinale);
 }

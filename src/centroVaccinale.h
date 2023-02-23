@@ -11,6 +11,6 @@
 
 const char * messaggioAtteso = "<Centro Vaccinale Porta>", * percorsoFileConfigurazioneCentroVaccinale = "../conf/centroVaccinale.conf";
 
-void clientUtenteRequestHandler    (int connectionFileDescriptor, int serverV_SFD);
+void gestoreRichiesteClientUtente    (int connectionFD, int serverV_SFD);
 
 #endif /* centroVaccinale_h */

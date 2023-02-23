@@ -1,17 +1,17 @@
 #include "UsageUtility.h"
 
 //-- Questa procedura effettua un controllo dei parametri relativi ad ogni entità invocata
-void checkUsage (int argc, const char * argv[], int expected_argc, const char * messaggioAtteso) {
+void checkUtilizzo (int argc, const char * argv[], int expected_argc, const char * messaggioAtteso) {
     if (argc != expected_argc) {
-        if (fprintf(stderr, (const char * restrict) "Usage: %s %s\n", argv[0], messaggioAtteso) < 0) raiseError(FPRINTF_SCOPE, FPRINTF_ERROR);
-        raiseError(CHECK_USAGE_SCOPE, CHECK_USAGE_ERROR);
+        if (fprintf(stderr, (const char * restrict) "Usage: %s %s\n", argv[0], messaggioAtteso) < 0) lanciaErrore(FPRINTF_SCOPE, FPRINTF_ERROR);
+        lanciaErrore(CHECK_USAGE_SCOPE, CHECK_USAGE_ERROR);
     }
 }
 
 /*-- Questa procedura si occupa della gestione degli errori con la visualizzazione dello scope e di conseguenza
   termina il processo.*/
-void raiseError (char * errorScope, int exitCode) {
-    if (fprintf(stderr, (const char * restrict) "Scope: %s - Error #%d\n", errorScope, exitCode) < 0) raiseError(FPRINTF_SCOPE, FPRINTF_ERROR);
+void lanciaErrore (char * errorScope, int exitCode) {
+    if (fprintf(stderr, (const char * restrict) "Scope: %s - Error #%d\n", errorScope, exitCode) < 0) lanciaErrore(FPRINTF_SCOPE, FPRINTF_ERROR);
     exit(exitCode);
 }
 
@@ -19,8 +19,8 @@ void raiseError (char * errorScope, int exitCode) {
 -- Questa procedura si occupa della gestione degli errori con la visualizzazione dello scope e di conseguenza
   termina il thread.
 */
-void threadRaiseError (char * errorScope, int exitCode) {
-    if (fprintf(stderr, (const char * restrict)  "Scope: %s - Error #%d\n", errorScope, exitCode) < 0) raiseError(FPRINTF_SCOPE, FPRINTF_ERROR);
+void threadlanciaErrore (char * errorScope, int exitCode) {
+    if (fprintf(stderr, (const char * restrict)  "Scope: %s - Error #%d\n", errorScope, exitCode) < 0) lanciaErrore(FPRINTF_SCOPE, FPRINTF_ERROR);
     pthread_exit(NULL);
 }
 
