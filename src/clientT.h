@@ -9,9 +9,9 @@
 
 
 
-const char * messaggioAtteso = "<Numero Tessera Sanitaria> <Nuovo Stato Green Pass (0 = NON VALIDO / 1 = VALIDO)>", * percorsoFileConfigurazione = "../conf/clientT.conf";
+const char * messaggioAtteso = "<Numero Tessera Sanitaria> <Nuovo Stato  GreenPass (0 = NON VALIDO / 1 = VALIDO)>", * percorsoFileConfigurazione = "../conf/clientT.conf";
 
-int setupClientT            (int argc,                          char * argv[],                  char ** healthCaardNumber,                  int * newGreenPassStatus);
-void updateGreenPass        (int serverG_SFD,  const void * codiceTesseraSanitaria,  const unsigned short int newGreenPassStatus                         );
+int setupClientT            (int argc,                          char * argv[],                  char ** healthCaardNumber,                  int * nuovoStatoGreenPass);
+void updateGreenPass        (int serverG_SFD,  const void * codiceTesseraSanitaria,  const unsigned short int nuovoStatoGreenPass                         );
 
 #endif /* clientT_h */

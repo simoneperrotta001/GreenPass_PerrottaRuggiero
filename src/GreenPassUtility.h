@@ -56,7 +56,7 @@ typedef struct {
 typedef struct {
     char codiceTesseraSanitaria[LUNGHEZZA_CODICE_TESSERA_SANITARIA];
     unsigned short int requestResult;
-} serverG_ReplyToClientS;
+} serverGRispondeAClientS;
 
 typedef struct {
     char codiceTesseraSanitaria[LUNGHEZZA_CODICE_TESSERA_SANITARIA];
@@ -66,7 +66,7 @@ typedef struct {
 typedef struct {
     char codiceTesseraSanitaria[LUNGHEZZA_CODICE_TESSERA_SANITARIA];
     unsigned short int updateResult;
-} serverG_ReplyToClientT;
+} serverGRispondeAClientT;
 
 enum sender {
     centroVaccinaleSender,

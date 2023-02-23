@@ -76,9 +76,9 @@ void clientS_RequestHandler (int connectionFD, int serverV_SFD) {
     unsigned short int clientS_viaServerG_SenderID = clientS_viaServerG_Sender;
     
     //--Allochiamo dinamicamente la memoria necessaria per il pacchetto da inviare al ClientS e quello da ricevere dal ServerV.
-    serverG_ReplyToClientS * newServerG_Reply = (serverG_ReplyToClientS *) calloc(1, sizeof(* newServerG_Reply));
+    serverGRispondeAClientS * nuovaRispostaServerG = (serverGRispondeAClientS *) calloc(1, sizeof(* nuovaRispostaServerG));
     serverV_ReplyToServerG_clientS * nuovaRispostaServerV = (serverV_ReplyToServerG_clientS *) calloc(1, sizeof(* nuovaRispostaServerV));
-    if (!newServerG_Reply) lanciaErrore(CALLOC_SCOPE, CALLOC_ERROR);
+    if (!nuovaRispostaServerG) lanciaErrore(CALLOC_SCOPE, CALLOC_ERROR);
     if (!nuovaRispostaServerV) lanciaErrore(CALLOC_SCOPE, CALLOC_ERROR);
     
     // fullRead per leggere il codice della tessera sanitaria.
@@ -91,12 +91,12 @@ void clientS_RequestHandler (int connectionFD, int serverV_SFD) {
     
     
     //--Copiamo i parametri del pacchetto di risposta del ServerV nel pacchetto da inviare al ClientS
-    strncpy((char *) newServerG_Reply->codiceTesseraSanitaria, (const char *) nuovaRispostaServerV->codiceTesseraSanitaria, LUNGHEZZA_CODICE_TESSERA_SANITARIA);
-    newServerG_Reply->requestResult = nuovaRispostaServerV->requestResult;
+    strncpy((char *) nuovaRispostaServerG->codiceTesseraSanitaria, (const char *) nuovaRispostaServerV->codiceTesseraSanitaria, LUNGHEZZA_CODICE_TESSERA_SANITARIA);
+    nuovaRispostaServerG->requestResult = nuovaRispostaServerV->requestResult;
     // fullWrite per inviare il pacchetto al ClientS.
-    if ((fullWriteReturnValue = fullWrite(connectionFD, (const void *) newServerG_Reply, sizeof(* newServerG_Reply))) != 0) lanciaErrore(FULL_WRITE_SCOPE, (int) fullWriteReturnValue);
+    if ((fullWriteReturnValue = fullWrite(connectionFD, (const void *) nuovaRispostaServerG, sizeof(* nuovaRispostaServerG))) != 0) lanciaErrore(FULL_WRITE_SCOPE, (int) fullWriteReturnValue);
     free(nuovaRispostaServerV);
-    free(newServerG_Reply);
+    free(nuovaRispostaServerG);
 }
 
 void clientT_RequestHandler (int connectionFD, int serverV_SFD) {
@@ -107,31 +107,31 @@ void clientT_RequestHandler (int connectionFD, int serverV_SFD) {
      Allochiamo dinamicamente la memoria  necessaria per il pacchetto da ricevere dal ClientT, quello da inviare al ClientT,
      quello da inviare al ServerV e quello da ricevere dal ServerV.
     */
-    clientT_RequestToServerG * newClientT_Request = (clientT_RequestToServerG *) calloc(1, sizeof(* newClientT_Request));
-    serverG_ReplyToClientT * newServerG_Reply = (serverG_ReplyToClientT *) calloc(1, sizeof(* newServerG_Reply));
+    clientT_RequestToServerG * nuovaRichiestaClientT = (clientT_RequestToServerG *) calloc(1, sizeof(* nuovaRichiestaClientT));
+    serverGRispondeAClientT * nuovaRispostaServerG = (serverGRispondeAClientT *) calloc(1, sizeof(* nuovaRispostaServerG));
     serverG_RequestToServerV_onBehalfOfClientT * newServerG_Request = (serverG_RequestToServerV_onBehalfOfClientT *) calloc(1, sizeof(* newServerG_Request));
     serverV_ReplyToServerG_clientT * nuovaRispostaServerV = (serverV_ReplyToServerG_clientT *) calloc(1, sizeof(* nuovaRispostaServerV));
-    if (!newServerG_Reply) lanciaErrore(CALLOC_SCOPE, CALLOC_ERROR);
+    if (!nuovaRispostaServerG) lanciaErrore(CALLOC_SCOPE, CALLOC_ERROR);
     if (!nuovaRispostaServerV) lanciaErrore(CALLOC_SCOPE, CALLOC_ERROR);
-    if (!newClientT_Request) lanciaErrore(CALLOC_SCOPE, CALLOC_ERROR);
+    if (!nuovaRichiestaClientT) lanciaErrore(CALLOC_SCOPE, CALLOC_ERROR);
     if (!newServerG_Request) lanciaErrore(CALLOC_SCOPE, CALLOC_ERROR);
     
     // fullRead per leggere la richiesta del ClientT
-    if ((fullReadReturnValue = fullRead(connectionFD, (void *) newClientT_Request, (size_t) sizeof(* newClientT_Request))) != 0) lanciaErrore(FULL_READ_SCOPE, (int) fullReadReturnValue);
-    strncpy((char *) newServerG_Request->codiceTesseraSanitaria, (const char *) newClientT_Request->codiceTesseraSanitaria, LUNGHEZZA_CODICE_TESSERA_SANITARIA);
-    newServerG_Request->updateValue = newClientT_Request->updateValue;
+    if ((fullReadReturnValue = fullRead(connectionFD, (void *) nuovaRichiestaClientT, (size_t) sizeof(* nuovaRichiestaClientT))) != 0) lanciaErrore(FULL_READ_SCOPE, (int) fullReadReturnValue);
+    strncpy((char *) newServerG_Request->codiceTesseraSanitaria, (const char *) nuovaRichiestaClientT->codiceTesseraSanitaria, LUNGHEZZA_CODICE_TESSERA_SANITARIA);
+    newServerG_Request->updateValue = nuovaRichiestaClientT->updateValue;
     // fullWrite per scrivere e inviare al ServerV ID e richiesta al ServerV
     if ((fullWriteReturnValue = fullWrite(serverV_SFD, (const void *) & clientT_viaServerG_SenderID, sizeof(clientT_viaServerG_SenderID))) != 0) lanciaErrore(FULL_WRITE_SCOPE, (int) fullWriteReturnValue);
     if ((fullWriteReturnValue = fullWrite(serverV_SFD, (const void *) newServerG_Request, sizeof(* newServerG_Request))) != 0) lanciaErrore(FULL_WRITE_SCOPE, (int) fullWriteReturnValue);
     // fullRead per attendere e leggere la risposta dal ServerV
     if ((fullReadReturnValue = fullRead(serverV_SFD, (void *) nuovaRispostaServerV, sizeof(* nuovaRispostaServerV))) != 0) lanciaErrore(FULL_READ_SCOPE, (int) fullReadReturnValue);
     
-    strncpy((char *) newServerG_Reply->codiceTesseraSanitaria, (const char *) nuovaRispostaServerV->codiceTesseraSanitaria, LUNGHEZZA_CODICE_TESSERA_SANITARIA);
-    newServerG_Reply->updateResult = nuovaRispostaServerV->updateResult;
+    strncpy((char *) nuovaRispostaServerG->codiceTesseraSanitaria, (const char *) nuovaRispostaServerV->codiceTesseraSanitaria, LUNGHEZZA_CODICE_TESSERA_SANITARIA);
+    nuovaRispostaServerG->updateResult = nuovaRispostaServerV->updateResult;
     // fullWrite per scrivere e invoare la risposta precedente del ServerV al ClientT
-    if ((fullWriteReturnValue = fullWrite(connectionFD, (const void *) newServerG_Reply, sizeof(* newServerG_Reply))) != 0) lanciaErrore(FULL_WRITE_SCOPE, (int) fullWriteReturnValue);
-    free(newClientT_Request);
-    free(newServerG_Reply);
+    if ((fullWriteReturnValue = fullWrite(connectionFD, (const void *) nuovaRispostaServerG, sizeof(* nuovaRispostaServerG))) != 0) lanciaErrore(FULL_WRITE_SCOPE, (int) fullWriteReturnValue);
+    free(nuovaRichiestaClientT);
+    free(nuovaRispostaServerG);
     free(newServerG_Request);
     free(nuovaRispostaServerV);
 }

@@ -10,7 +10,7 @@ int main (int argc, char * argv[]) {
     
     
     /*
-    --Richiamiamo la funzione che permette di mandare la richiesta la quale verifica la presenza di un eventuale Green Pass
+    --Richiamiamo la funzione che permette di mandare la richiesta la quale verifica la presenza di un eventuale  GreenPass
     associato.
     */
     checkGreenPass(serverG_SFD, (const void *) codiceTesseraSanitaria, (size_t) sizeof(char) * LUNGHEZZA_CODICE_TESSERA_SANITARIA);
@@ -54,34 +54,30 @@ void checkGreenPass (int serverG_SFD, const void * codiceTesseraSanitaria, size_
     unsigned short int clientS_SenderID = clientS_viaServerG_Sender;
     
     //--Allochiamo la memoria per il pacchetto di risposta del ServerG.
-    serverG_ReplyToClientS * newServerG_Reply = (serverG_ReplyToClientS *) calloc(1, sizeof(* newServerG_Reply));
-    if (!newServerG_Reply) lanciaErrore(CALLOC_SCOPE, CALLOC_ERROR);
+    serverGRispondeAClientS * nuovaRispostaServerG = (serverGRispondeAClientS *) calloc(1, sizeof(* nuovaRispostaServerG));
+    if (!nuovaRispostaServerG) lanciaErrore(CALLOC_SCOPE, CALLOC_ERROR);
     
     if (fprintf(stdout, "\n... Verifica in corso ...\n") < 0) lanciaErrore(FPRINTF_SCOPE, FPRINTF_ERROR);
     // fullWrite per la scrittura e invio dell'ID del ClientS al ServerG.
     if ((fullWriteReturnValue = fullWrite(serverG_SFD, (const void *) & clientS_SenderID, sizeof(clientS_SenderID))) != 0) lanciaErrore(FULL_WRITE_SCOPE, (int) fullWriteReturnValue);
     // fullWrite per la scrittura e invio del codice di tessera sanitaria del ClientS al ServerG.
     if ((fullWriteReturnValue = fullWrite(serverG_SFD, codiceTesseraSanitaria, nBytes)) != 0) lanciaErrore(FULL_WRITE_SCOPE, (int) fullWriteReturnValue);
-    
-    
-    /*
-    fullRead per ottenere e leggere la risposta da parte del ServerG. Tale risposta è caratterizzata da una
-    serie di parametri: Codice Tessera Sanitaria ed esito della verifica del Vanilla Green Pass associato
-    (se esistente). La risposta verrà salvata in "newServerG_Reply".
-    */
-    if ((fullReadReturnValue = fullRead(serverG_SFD, (void *) newServerG_Reply, sizeof(* newServerG_Reply))) != 0) lanciaErrore(FULL_READ_SCOPE, (int) fullReadReturnValue);
-    
-    
+
+    /*fullRead per ottenere e leggere la risposta da parte del ServerG. Tale risposta è caratterizzata da una
+    serie di parametri: Codice Tessera Sanitaria ed esito della verifica del  GreenPass associato
+    (se esistente). La risposta verrà salvata nel file "nuovaRispostaServerG".*/
+    if ((fullReadReturnValue = fullRead(serverG_SFD, (void *) nuovaRispostaServerG, sizeof(* nuovaRispostaServerG))) != 0) lanciaErrore(FULL_READ_SCOPE, (int) fullReadReturnValue);
+
     /*
     --Effettuiamo un ultimo controllo su quest'ultimo parametro: se è FALSE, allora non esiste un codice di tessera
-    sanitaria pari a quello fornito associato ad un Vanilla Green Pass o il Vanilla Green Pass associato al
+    sanitaria pari a quello fornito associato ad un  GreenPass o il  GreenPass associato al
     codice di tessera sanitaria fornito risulta non essere valido. Se invece l'ultimo campo del pacchetto di
-    risposta è TRUE, significa che il Vanilla Green Pass associato è valido.
+    risposta è TRUE, significa che il    GreenPass associato è valido.
     */
-    if (newServerG_Reply->requestResult == FALSE) {
-        if (fprintf(stdout, "\nLa tessera sanitaria immessa non risulta essere associata a un GreenPass attualmente valido.\nArrivederci.\n") < 0) lanciaErrore(FPRINTF_SCOPE, FPRINTF_ERROR);
+    if (nuovaRispostaServerG->requestResult == FALSE) {
+        if (fprintf(stdout, "\nLa tessera sanitaria immessa non risulta essere associata a un GreenPass attualmente valido.\n") < 0) lanciaErrore(FPRINTF_SCOPE, FPRINTF_ERROR);
     } else {
-        if (fprintf(stdout, "\nLa tessera sanitaria immessa risulta essere associata a un GreenPass attualmente valido.\nArrivederci.\n") < 0) lanciaErrore(FPRINTF_SCOPE, FPRINTF_ERROR);
+        if (fprintf(stdout, "\nLa tessera sanitaria immessa risulta essere associata a un GreenPass attualmente valido.\n") < 0) lanciaErrore(FPRINTF_SCOPE, FPRINTF_ERROR);
     }
-    free(newServerG_Reply);
+    free(nuovaRispostaServerG);
 }

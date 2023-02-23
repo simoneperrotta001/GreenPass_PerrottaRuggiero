@@ -20,7 +20,7 @@ int main (int argc, char * argv[]) {
     if (setsockopt(listenFD, SOL_SOCKET, SO_REUSEADDR, & enable, (socklen_t) sizeof(enable))  == -1) lanciaErrore(SET_SOCK_OPT_SCOPE, SET_SOCK_OPT_ERROR);
     memset((void *) & centroVaccinaleIndirizzo, 0, sizeof(centroVaccinaleIndirizzo));
     memset((void *) & client, 0, sizeof(client));
-    
+    //--Creiamo il socket per mettere in ascolto il centroVaccinale sulla porta passata come parametro da terminale
     centroVaccinaleIndirizzo.sin_family      = AF_INET;
     centroVaccinaleIndirizzo.sin_addr.s_addr = htonl(INADDR_ANY);
     centroVaccinaleIndirizzo.sin_port        = htons(centroVaccinalePorta);
@@ -65,7 +65,7 @@ void gestoreRichiesteClientUtente (int connectionFD, int serverV_SFD) {
     if ((fullReadReturnValue = fullRead(connectionFD, (void *) buffer, (size_t) LUNGHEZZA_CODICE_TESSERA_SANITARIA * sizeof(char))) != 0) lanciaErrore(FULL_READ_SCOPE, (int) fullReadReturnValue);
     //--Copiamo il codice della tessera sanitaria nel primo campoo del pacchetto di invio al ServerV.
     strncpy((char *) nuovaRichiestaCentroVaccinale->codiceTesseraSanitaria, (const char *)  buffer, LUNGHEZZA_CODICE_TESSERA_SANITARIA);
-    //--Calcoliamo il periodo di validità del Vanilla Green Pass
+    //--Calcoliamo il periodo di validità del    GreenPass
     dataScadenzaVaccino = getdataScadenzaVaccino();
     //--Copiamo il valore di tale periodo nel pacchetto di invio al ServerV.
     strncpy((char *) nuovaRichiestaCentroVaccinale->dataScadenzaGreenPass, (const char *) dataScadenzaVaccino, LUNGHEZZA_DATA);

@@ -154,7 +154,7 @@ void * centroVaccinaleRequestHandler (void * args) {
         threadAbort(FOPEN_SCOPE, FOPEN_ERROR, threadconnectionFD, nuovaRichiestaCentroVaccinale, nuovaRispostaServerV);
     }
     
-    //--Verifichiamo la validità del Green Pass (se risulta scaduto o meno)
+    //--Verifichiamo la validità del  GreenPass (se risulta scaduto o meno)
     while ((getLineBytes = getline((char ** restrict) & singleLine, (size_t * restrict) & effectiveLineLength, (FILE * restrict) originalFilePointer)) != -1) {
         /*
          --Controlliamo se il numero di tessera sanitaria incontrato nel file corrisponde a quello inviato dal Centro Vaccinale
@@ -196,7 +196,7 @@ void * centroVaccinaleRequestHandler (void * args) {
             elapsedMonths = ((((difftime(scheduledVaccinationDate, requestVaccinationDate) / 60) / 60) / 24) / 31);
             /*
              Se il numero di mesi passati è minore del numero di mesi da aspettare per la successiva vaccinazione e
-             il numero di mesi di differenza è maggiore di 0 il Vanilla Green Pass non è ancora scaduto.
+             il numero di mesi di differenza è maggiore di 0 il    GreenPass non è ancora scaduto.
              */
             if (elapsedMonths <= (MESI_ATTESA_PROSSIMA_SOMMINISTRAZIONE + 1) && elapsedMonths > 0) {
                 // Copiamo la data dal file "serverV.dat" nella risposta da mandare al "CentroVaccinale"
@@ -337,7 +337,7 @@ void * clientS_viaServerG_RequestHandler(void * args) {
         threadAbort(FOPEN_SCOPE, FOPEN_ERROR, threadconnectionFD, nuovaRispostaServerV);
     }
 
-    //--Verifichiamo la validità del Green Pass (se risulta scaduto o meno)
+    //--Verifichiamo la validità del  GreenPass (se risulta scaduto o meno)
     while ((getLineBytes = getline(& singleLine, & effectiveLineLength, originalFilePointer)) != -1) {
         /*
          --Controlliamo se il numero di tessera sanitaria incontrato nel file corrisponde a quello inviato dal Centro Vaccinale
@@ -377,12 +377,12 @@ void * clientS_viaServerG_RequestHandler(void * args) {
             elapsedMonths = ((((difftime(scheduledVaccinationDate, requestVaccinationDate) / 60) / 60) / 24) / 31);
             /*
              Se il numero di mesi passati è minore del numero di mesi da aspettare per la successiva vaccinazione e
-             il numero di mesi di differenza è maggiore di 0 il Vanilla Green Pass non è ancora scaduto.
+             il numero di mesi di differenza è maggiore di 0 il    GreenPass non è ancora scaduto.
              */
             if (elapsedMonths <= (MESI_ATTESA_PROSSIMA_SOMMINISTRAZIONE + 1) && elapsedMonths > 0) isGreenPassExpired = FALSE;
             strncpy((char *) greenPassStatusString, (const char *) singleLine + LUNGHEZZA_CODICE_TESSERA_SANITARIA + LUNGHEZZA_DATA, 1);
             greenPassStatusString[1] = '\0';
-            //--Convertiamo lo stato del Green Pass da stringa a intero
+            //--Convertiamo lo stato del  GreenPass da stringa a intero
             greenPassStatus = (unsigned short int) strtoul((const char * restrict) greenPassStatusString, (char ** restrict) NULL, 10);
             
             //--Controlliamo la validità dello stato: se FALSE significa che non è valido, altrimenti è valido.
@@ -402,7 +402,7 @@ void * clientS_viaServerG_RequestHandler(void * args) {
         //--Utilizziamo il mutex per l'accesso al file system.
         if (pthread_mutex_unlock(& fileSystemAccessMutex) != 0) threadAbort(PTHREAD_MUTEX_UNLOCK_SCOPE, PTHREAD_MUTEX_UNLOCK_ERROR, threadconnectionFD, nuovaRispostaServerV, nowDateString, singleLine);
 
-        //Se il Green Pass è valido e non è scaduto, si inserisce nel pacchetto di risposta l'esito dei controlli
+        //Se il  GreenPass è valido e non è scaduto, si inserisce nel pacchetto di risposta l'esito dei controlli
         if (isGreenPassValid && !isGreenPassExpired) nuovaRispostaServerV->requestResult = TRUE;
         
         // fullWrite per inviare il pacchetto
@@ -469,7 +469,7 @@ void * clientT_viaServerG_RequestHandler(void * args) {
         if ((strncmp((const char *) nuovaRispostaServerV->codiceTesseraSanitaria, (const char *) singleLine, LUNGHEZZA_CODICE_TESSERA_SANITARIA - 1)) == 0) {
             //--Se c'è
             codiceTesseraSanitariaWasFound = TRUE;
-            //--Salviamo la data di scadenza del Vannila Green Pass
+            //--Salviamo la data di scadenza del Vannila  GreenPass
             strncpy((char *) dateCopiedFromFile, (const char *) singleLine + LUNGHEZZA_CODICE_TESSERA_SANITARIA, LUNGHEZZA_DATA - 1);
             dateCopiedFromFile[LUNGHEZZA_DATA - 1] = '\0';
             break;
@@ -477,7 +477,7 @@ void * clientT_viaServerG_RequestHandler(void * args) {
     }
 
     fclose(originalFilePointer);
-    //--Se il codice è stato trovato si può modificare lo stato di validità del Vanilla Green Pass
+    //--Se il codice è stato trovato si può modificare lo stato di validità del    GreenPass
     if (codiceTesseraSanitariaWasFound) {
         //--Apriamo i due file: l'originale e il temporaneo
         originalFilePointer = fopen(dataPath, "r");
@@ -489,7 +489,7 @@ void * clientT_viaServerG_RequestHandler(void * args) {
             threadAbort(FOPEN_SCOPE, FOPEN_ERROR, threadconnectionFD, newServerG_Request, nuovaRispostaServerV, singleLine);
         }
 
-        //--Salviamo nel file serverV.dat il nuovo stato del Vanilla Green Pass + lettura linea per linea del file originale.
+        //--Salviamo nel file serverV.dat il nuovo stato del    GreenPass + lettura linea per linea del file originale.
         while ((getLineBytes = getline(& singleLine, & effectiveLineLength, originalFilePointer)) != -1) {
             // Se non c'è corrispondenza tra i codici della tessera sanitaria
             if ((strncmp(nuovaRispostaServerV->codiceTesseraSanitaria, singleLine, LUNGHEZZA_CODICE_TESSERA_SANITARIA - 1)) != 0) {
@@ -503,7 +503,7 @@ void * clientT_viaServerG_RequestHandler(void * args) {
             }
         }
 
-        //--Inseriamo i nuovi valori del Vanilla Green Pass modificato nel file temporaneo
+        //--Inseriamo i nuovi valori del    GreenPass modificato nel file temporaneo
         if (fprintf(tempFilePointer, "%s:%s:%hu\n", nuovaRispostaServerV->codiceTesseraSanitaria, dateCopiedFromFile, newServerG_Request->updateValue) < 0) {
             fclose(originalFilePointer);
             fclose(tempFilePointer);

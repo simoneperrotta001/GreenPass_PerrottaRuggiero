@@ -31,7 +31,7 @@ void ritornaDatiDiConfigurazione (const char * percorsoFileConfigurazione, char 
     fclose(filePointer);
 }
 
-// Calcoliamo il periodo di validità di un nuovo Vanilla Green Pass
+// Calcoliamo il periodo di validità di un nuovo    GreenPass
 char * getdataScadenzaVaccino (void) {
     time_t systemTimeSeconds = time(NULL);
     // Si considera la data di sistema attuale
