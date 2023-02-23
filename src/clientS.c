@@ -3,18 +3,15 @@
 int main (int argc, char * argv[]) {
     char * codiceTesseraSanitaria;
     
-    // Prepariamo il ClientS a connettersi con il ServerG
+    //--Prepariamo il ClientS a connettersi con il ServerG
     int serverG_SocketFileDescriptor = setupClientS(argc, argv, & codiceTesseraSanitaria);
-    //mettiamo il terminatore alla fine
+    //--Mettiamo il terminatore alla fine
     codiceTesseraSanitaria[LUNGHEZZA_CODICE_TESSERA_SANITARIA - 1] = '\0';
     
     
     /*
-    Si richiama la funzione che permette di mandare la richeista che verifica la presenza di un eventuale Green Pass
-    associato. Essa avrà in ingresso: "serverG_SocketFileDescriptor", il codice della tessera sanitaria associata
-    al Vanilla Green Pass e la dimensione di quest'ultimo. Viene definita una variabile "unsigned short int
-    ClientS_SenderID" che conterrà il valore che identifica univocamente le entità di tipo ClientS per permettere
-    al ServerG di distinguere le richieste in entrata in base al mittente.
+    --Richiamiamo la funzione che permette di mandare la richiesta che verifica la presenza di un eventuale Green Pass
+    associato.
     */
     checkGreenPass(serverG_SocketFileDescriptor, (const void *) codiceTesseraSanitaria, (size_t) sizeof(char) * LUNGHEZZA_CODICE_TESSERA_SANITARIA);
     wclose(serverG_SocketFileDescriptor);
@@ -28,23 +25,17 @@ int setupClientS (int argc, char * argv[], char ** codiceTesseraSanitaria) {
     unsigned short int serverG_Port;
     int serverG_SocketFileDescriptor;
     
-    // Si verifica che il ClientS sia stato avviato con i parametri che si aspetta di avere
+    //--Verifichiamo che il ClientS sia stato avviato con i parametri che si aspetta di avere
     checkUsage(argc, (const char **) argv, CLIENT_S_ARGS_NO, messaggioAtteso);
-    // Si verififa che il codice di tessera sanitaria immesso sia del formato e della lunghezza giusta
+    //--Verifichiamo che il codice di tessera sanitaria immesso sia del formato e della lunghezza giusta
     checkHealtCardNumber(argv[1]);
-    /*
-     Si alloca la giusta quantità di memoria per "codiceTesseraSanitaria" e si controlla che ciò sia stato fatto
-     in maniera corretta.
-    */
+    //--Allochiamo memoria per il codice di tessera sanitaria
     * codiceTesseraSanitaria = (char *) calloc(LUNGHEZZA_CODICE_TESSERA_SANITARIA, sizeof(char));
     if (! * codiceTesseraSanitaria) raiseError(CALLOC_SCOPE, CALLOC_ERROR);
-    // Si copia il codice della tessera sanitaria ricevuto in input (senza terminatore quindi con lunghezza -1) nel puntatore ad array di char codiceTesseraSanitaria
+    //--Copiamo il codice della tessera sanitaria ricevuto in input (senza terminatore quindi con lunghezza -1) nel puntatore ad array di char codiceTesseraSanitaria
     strncpy(* codiceTesseraSanitaria, (const char *) argv[1], LUNGHEZZA_CODICE_TESSERA_SANITARIA - 1);
     
-    /*
-    Si ricava, a partire dal file di configurazione definito in "percorsoFileConfigurazione", i parametri fondamentali per contattare
-    il CentroVaccinale.
-    */
+    //--Ricaviamo i parametri fondamentali per contattare il CentroVaccinale.
     retrieveConfigurationData(percorsoFileConfigurazione, & stringServerG_IP, & serverG_Port);
     serverG_SocketFileDescriptor = wsocket(AF_INET, SOCK_STREAM, 0);
     memset((void *) & serverG_Address, 0, sizeof(serverG_Address));
@@ -62,7 +53,7 @@ void checkGreenPass (int serverG_SocketFileDescriptor, const void * codiceTesser
     ssize_t fullWriteReturnValue, fullReadReturnValue;
     unsigned short int clientS_SenderID = clientS_viaServerG_Sender;
     
-    // Si alloca la memoria per il pacchetto di risposta del ServerG.
+    //--Allochiamo la memoria per il pacchetto di risposta del ServerG.
     serverG_ReplyToClientS * newServerG_Reply = (serverG_ReplyToClientS *) calloc(1, sizeof(* newServerG_Reply));
     if (!newServerG_Reply) raiseError(CALLOC_SCOPE, CALLOC_ERROR);
     
@@ -82,7 +73,7 @@ void checkGreenPass (int serverG_SocketFileDescriptor, const void * codiceTesser
     
     
     /*
-    Si effettua un ultimo controllo su quest'ultimo parametro: se è FALSE, allora non esiste un codice di tessera
+    --Effettuiamo un ultimo controllo su quest'ultimo parametro: se è FALSE, allora non esiste un codice di tessera
     sanitaria pari a quello fornito associato ad un Vanilla Green Pass o il Vanilla Green Pass associato al
     codice di tessera sanitaria fornito risulta non essere valido. Se invece l'ultimo campo del pacchetto di
     risposta è TRUE, significa che il Vanilla Green Pass associato è valido.
