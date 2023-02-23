@@ -1,7 +1,7 @@
 #include "serverG.h"
 
 int main (int argc, char * argv[]) {
-    int serverV_SFD, listenFileDescriptor, connectionFileDescriptor, enable = TRUE;
+    int serverV_SFD, listenFD, connectionFileDescriptor, enable = TRUE;
     struct sockaddr_in client, serverG_Address;
     unsigned short int serverG_Port, requestIdentifier;
     pid_t childPid;
@@ -14,8 +14,8 @@ int main (int argc, char * argv[]) {
     if (serverG_Port == 0 && (errno == EINVAL || errno == ERANGE)) raiseError(STRTOUL_SCOPE, STRTOUL_ERROR);
     
     //--Impostiamo la comunicazione col clientS e clientT
-    listenFileDescriptor = wsocket(AF_INET, SOCK_STREAM, 0);
-    if (setsockopt(listenFileDescriptor, SOL_SOCKET, SO_REUSEADDR, & enable, (socklen_t) sizeof(enable)) == -1) raiseError(SET_SOCK_OPT_SCOPE, SET_SOCK_OPT_ERROR);
+    listenFD = wsocket(AF_INET, SOCK_STREAM, 0);
+    if (setsockopt(listenFD, SOL_SOCKET, SO_REUSEADDR, & enable, (socklen_t) sizeof(enable)) == -1) raiseError(SET_SOCK_OPT_SCOPE, SET_SOCK_OPT_ERROR);
     //--Impostiamo a 0 i byte di serverG_Address e client
     memset((void *) & serverG_Address, 0, sizeof(serverG_Address));
     memset((void *) & client, 0, sizeof(client));
@@ -24,15 +24,15 @@ int main (int argc, char * argv[]) {
     serverG_Address.sin_addr.s_addr = htonl(INADDR_ANY);//accetta le richieste da qualsiasi indirizzo
     serverG_Address.sin_port        = htons(serverG_Port);//inizializzazione della porta
     //Impostazione dei campi (comprese le porte) del serverG_Address
-    wbind(listenFileDescriptor, (struct sockaddr *) & serverG_Address, (socklen_t) sizeof(serverG_Address));
+    wbind(listenFD, (struct sockaddr *) & serverG_Address, (socklen_t) sizeof(serverG_Address));
     //--Mettiamo il serverG in ascolto sulla socket creata
-    wlisten(listenFileDescriptor, LISTEN_QUEUE_SIZE * LISTEN_QUEUE_SIZE);
+    wlisten(listenFD, LISTEN_QUEUE_SIZE * LISTEN_QUEUE_SIZE);
     signal(SIGCHLD, SIG_IGN);
     
     while (TRUE) {
         ssize_t fullReadReturnValue;
         socklen_t clientAddressLength = (socklen_t) sizeof(client);
-        while ((connectionFileDescriptor = waccept(listenFileDescriptor, (struct sockaddr *) & client, (socklen_t *) & clientAddressLength)) < 0 && (errno == EINTR));
+        while ((connectionFileDescriptor = waccept(listenFD, (struct sockaddr *) & client, (socklen_t *) & clientAddressLength)) < 0 && (errno == EINTR));
         //--Attendiamo tramite fullRead l'identificativo del mittente col quale si è messo in collegamento.
         if ((fullReadReturnValue = fullRead(connectionFileDescriptor, (void *) & requestIdentifier, sizeof(requestIdentifier))) != 0) raiseError(FULL_READ_SCOPE, (int) fullReadReturnValue);
         
@@ -40,7 +40,7 @@ int main (int argc, char * argv[]) {
             raiseError(FORK_SCOPE, FORK_ERROR);
         } else if (childPid == 0) {
             // Processo figlio che chiude il FD realtivo "all'ascolto" delle nuove connessioni in arrivo per il ServerG
-            wclose(listenFileDescriptor);
+            wclose(listenFD);
             // Richiesta di instaurare una connessione con il ServerV
             serverV_SFD = createConnectionWithServerV(percorsoFileConfigurazioneServerG);
             

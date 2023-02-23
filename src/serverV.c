@@ -1,7 +1,7 @@
 #include "serverV.h"
 
 int main (int argc, char * argv[]) {
-    int listenFileDescriptor, connectionFileDescriptor, enable = TRUE, threadCreationReturnValue;
+    int listenFD, connectionFileDescriptor, enable = TRUE, threadCreationReturnValue;
     pthread_t singleTID;
     pthread_attr_t attr;
     unsigned short int serverV_Port, requestIdentifier;
@@ -14,16 +14,16 @@ int main (int argc, char * argv[]) {
     //--Se il numero di porta non dovesse essere valido viene lanciato un errore
     if (serverV_Port == 0 && (errno == EINVAL || errno == ERANGE)) raiseError(STRTOUL_SCOPE, STRTOUL_ERROR);
     
-    listenFileDescriptor = wsocket(AF_INET, SOCK_STREAM, 0);
+    listenFD = wsocket(AF_INET, SOCK_STREAM, 0);
     //--Durante l'applicazione del meccanismo di IPC, con le socket, impostiamo l'opzione di riutilizzo degli indirizzi
-    if (setsockopt(listenFileDescriptor, SOL_SOCKET, SO_REUSEADDR, & enable, (socklen_t) sizeof(enable))  == -1) raiseError(SET_SOCK_OPT_SCOPE, SET_SOCK_OPT_ERROR);
+    if (setsockopt(listenFD, SOL_SOCKET, SO_REUSEADDR, & enable, (socklen_t) sizeof(enable))  == -1) raiseError(SET_SOCK_OPT_SCOPE, SET_SOCK_OPT_ERROR);
     memset((void *) & serverV_Address, 0, sizeof(serverV_Address));
     memset((void *) & client, 0, sizeof(client));
     serverV_Address.sin_family      = AF_INET;
     serverV_Address.sin_addr.s_addr = htonl(INADDR_ANY);
     serverV_Address.sin_port        = htons(serverV_Port);
-    wbind(listenFileDescriptor, (struct sockaddr *) & serverV_Address, (socklen_t) sizeof(serverV_Address));
-    wlisten(listenFileDescriptor, LISTEN_QUEUE_SIZE * LISTEN_QUEUE_SIZE);
+    wbind(listenFD, (struct sockaddr *) & serverV_Address, (socklen_t) sizeof(serverV_Address));
+    wlisten(listenFD, LISTEN_QUEUE_SIZE * LISTEN_QUEUE_SIZE);
     
     
     //--Inizializziamo un mutex che servirà per effettuare la mutua esclusione per l'accesso al file serverV.dat
@@ -46,7 +46,7 @@ int main (int argc, char * argv[]) {
     while (TRUE) {
         ssize_t fullReadReturnValue;
         socklen_t clientAddressLength = (socklen_t) sizeof(client);
-        while ((connectionFileDescriptor = waccept(listenFileDescriptor, (struct sockaddr *) & client, (socklen_t *) & clientAddressLength)) < 0 && (errno == EINTR));
+        while ((connectionFileDescriptor = waccept(listenFD, (struct sockaddr *) & client, (socklen_t *) & clientAddressLength)) < 0 && (errno == EINTR));
         // fullRead per leggere l'ID dell'entità connessa con il ServerV.
         if ((fullReadReturnValue = fullRead(connectionFileDescriptor, (void *) & requestIdentifier, sizeof(requestIdentifier))) != 0) raiseError(FULL_READ_SCOPE, (int) fullReadReturnValue);
 
@@ -105,7 +105,7 @@ int main (int argc, char * argv[]) {
     }
     //--Visto che si è allocata memoria dinamica in precedenza deallochiamo tale memoria invocando destory su tutti gli attributi
     if (pthread_attr_destroy(& attr) != 0) raiseError(PTHREAD_MUTEX_ATTR_DESTROY_SCOPE, PTHREAD_MUTEX_ATTR_DESTROY_ERROR);
-    wclose(listenFileDescriptor);
+    wclose(listenFD);
     exit(0);
 }
 

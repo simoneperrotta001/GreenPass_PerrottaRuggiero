@@ -2,7 +2,7 @@
 
 int main (int argc, char * argv[]) {
     int serverV_SFD,
-    listenFileDescriptor,
+    listenFD,
     connectionFileDescriptor,
     enable = TRUE;
     struct sockaddr_in client, centroVaccinaleIndirizzo;
@@ -15,27 +15,27 @@ int main (int argc, char * argv[]) {
     if (centroVaccinalePorta == 0 && (errno == EINVAL || errno == ERANGE)) raiseError(STRTOUL_SCOPE, STRTOUL_ERROR);
     
     //--Impostiamo la comunicazione col clientCitizen
-    listenFileDescriptor = wsocket(AF_INET, SOCK_STREAM, 0);
+    listenFD = wsocket(AF_INET, SOCK_STREAM, 0);
     //--Durante l'applicazione del meccanismo di IPC via socket impostiamo l'opzione di riutilizzo degli indirizzi
-    if (setsockopt(listenFileDescriptor, SOL_SOCKET, SO_REUSEADDR, & enable, (socklen_t) sizeof(enable))  == -1) raiseError(SET_SOCK_OPT_SCOPE, SET_SOCK_OPT_ERROR);
+    if (setsockopt(listenFD, SOL_SOCKET, SO_REUSEADDR, & enable, (socklen_t) sizeof(enable))  == -1) raiseError(SET_SOCK_OPT_SCOPE, SET_SOCK_OPT_ERROR);
     memset((void *) & centroVaccinaleIndirizzo, 0, sizeof(centroVaccinaleIndirizzo));
     memset((void *) & client, 0, sizeof(client));
     
     centroVaccinaleIndirizzo.sin_family      = AF_INET;
     centroVaccinaleIndirizzo.sin_addr.s_addr = htonl(INADDR_ANY);
     centroVaccinaleIndirizzo.sin_port        = htons(centroVaccinalePorta);
-    wbind(listenFileDescriptor, (struct sockaddr *) & centroVaccinaleIndirizzo, (socklen_t) sizeof(centroVaccinaleIndirizzo));
-    wlisten(listenFileDescriptor, LISTEN_QUEUE_SIZE);
+    wbind(listenFD, (struct sockaddr *) & centroVaccinaleIndirizzo, (socklen_t) sizeof(centroVaccinaleIndirizzo));
+    wlisten(listenFD, LISTEN_QUEUE_SIZE);
     signal(SIGCHLD, SIG_IGN);
     
     while (TRUE) {
         socklen_t clientAddressLength = (socklen_t) sizeof(client);
-        while ((connectionFileDescriptor = waccept(listenFileDescriptor, (struct sockaddr *) & client, (socklen_t *) & clientAddressLength)) < 0 && (errno == EINTR));
+        while ((connectionFileDescriptor = waccept(listenFD, (struct sockaddr *) & client, (socklen_t *) & clientAddressLength)) < 0 && (errno == EINTR));
         if ((childPid = fork()) == -1) {
             raiseError(FORK_SCOPE, FORK_ERROR);
         } else if (childPid == 0) {
             // Processo figlio che chiude il FD realtivo "all'ascolto" delle nuove connessioni in arrivo per il CentroVaccinale
-            wclose(listenFileDescriptor);
+            wclose(listenFD);
             //--Realizziamo un collegamento con il ServerV all'interno del processo figlio generato
             serverV_SFD = createConnectionWithServerV(percorsoFileConfigurazioneCentroVaccinale);
             //--Invochiamo la routine per la gestione della richiesta del ClientCitizen collegatosi.
@@ -47,7 +47,7 @@ int main (int argc, char * argv[]) {
     }
     
     // Codice mai eseguito
-    wclose(listenFileDescriptor);
+    wclose(listenFD);
     exit(0);
 }
 
