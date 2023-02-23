@@ -3,15 +3,13 @@
 int main (int argc, char * argv[]) {
     char * codiceTesseraSanitaria;
     
-    // Setup preliminare della connessione da parte del ClientT con il ServerG.
+    //--Eseguiamo un setup preliminare per la connessione da parte del ClientT con il ServerG.
     int newGreenPassStatus, serverG_SocketFileDescriptor = setupClientT(argc, argv, & codiceTesseraSanitaria, & newGreenPassStatus);
     codiceTesseraSanitaria[LUNGHEZZA_CODICE_TESSERA_SANITARIA - 1] = '\0';
     
     /*
-    Si richiama la funzione che permette di mandare la richeista di riattivazione o l'invalidazione del Vanilla
-    Green Pass di uno specifico cittadino a partire da un codice di tessera sanitaria fornito. Essa avrà in ingresso:
-    "serverG_SocketFileDescriptor", il codice della tessera sanitaria associata al Vanilla Green Pass da
-    riattivare/invalidare e il nuovo stato del Vanilla Green Pass.
+    --Richiamiamo la funzione che permette di mandare la richiesta di riattivazione o l'invalidazione del Vanilla
+    Green Pass di uno specifico cittadino a partire da un codice di tessera sanitaria fornito.
     */
     updateGreenPass(serverG_SocketFileDescriptor, (const void *) codiceTesseraSanitaria, (const unsigned short int) newGreenPassStatus);
     wclose(serverG_SocketFileDescriptor);
@@ -25,19 +23,16 @@ int setupClientT (int argc, char * argv[], char ** codiceTesseraSanitaria, int *
     unsigned short int serverG_Port;
     int serverG_SocketFileDescriptor;
     
-    // Si verifica che il ClientT sia stato avviato con i parametri che si aspetta di avere.
+    //--Verifichiamo che il ClientT sia stato avviato con i parametri che si aspetta di avere.
     checkUsage(argc, (const char **) argv, CLIENT_T_ARGS_NO, messaggioAtteso);
-    // Si verififa che il codice di tessera sanitaria immesso sia del formato e della lunghezza giusta.
+    //--Verifichiamo che il codice di tessera sanitaria immesso sia del formato e della lunghezza giusta.
     checkHealtCardNumber(argv[1]);
     * newGreenPassStatus = (unsigned short int) strtoul((const char * restrict) argv[2], (char ** restrict) NULL, 10);
     if (* newGreenPassStatus == 0 && (errno == EINVAL || errno == ERANGE)) raiseError(STRTOUL_SCOPE, STRTOUL_ERROR);
     if (* newGreenPassStatus != TRUE && * newGreenPassStatus != FALSE) raiseError(INVALID_UPDATE_STATUS_SCOPE, INVALID_UPDATE_STATUS_ERROR);
     
     
-    /*
-    Si alloca la giusta quantit‡ di memoria per "codiceTesseraSanitaria" e si controlla che ciò sia stato fatto
-    in maniera corretta.
-    */
+    //-Allochiamo la memoria necessaria per la tessera sanitaria
     * codiceTesseraSanitaria = (char *) calloc(LUNGHEZZA_CODICE_TESSERA_SANITARIA, sizeof(char));
     if (! * codiceTesseraSanitaria) raiseError(CALLOC_SCOPE, CALLOC_ERROR);
     strncpy(* codiceTesseraSanitaria, (const char *) argv[1], LUNGHEZZA_CODICE_TESSERA_SANITARIA - 1);
@@ -58,22 +53,21 @@ int setupClientT (int argc, char * argv[], char ** codiceTesseraSanitaria, int *
 void updateGreenPass (int serverG_SocketFileDescriptor, const void * codiceTesseraSanitaria, const unsigned short int newGreenPassStatus) {
     ssize_t fullWriteReturnValue, fullReadReturnValue;
     unsigned short int clientT_SenderID = clientT_viaServerG_Sender;
-    // Si alloca la memoria per il pacchetto di risposta del ServerG.
+    //--Allochiamo la memoria per il pacchetto di risposta del ServerG.
     serverG_ReplyToClientT * newServerG_Reply = (serverG_ReplyToClientT *) calloc(1, sizeof(* newServerG_Reply));
-    // Si alloca la memoria per il pacchetto di richiesta da parte del ClientT al ServerG.
+    //--Allochiamo la memoria per il pacchetto di richiesta da parte del ClientT al ServerG.
     clientT_RequestToServerG * newClientT_Request = (clientT_RequestToServerG *) calloc(1, sizeof(* newClientT_Request));
     if (!newServerG_Reply) raiseError(CALLOC_SCOPE, CALLOC_ERROR);
     if (!newClientT_Request) raiseError(CALLOC_SCOPE, CALLOC_ERROR);
     
     
-    // Copia del codice della tessera sanitaria nel pacchetto di richiesta.
+    //--Copiamo il codice della tessera sanitaria nel pacchetto di richiesta.
     strncpy(newClientT_Request->codiceTesseraSanitaria, codiceTesseraSanitaria, LUNGHEZZA_CODICE_TESSERA_SANITARIA);
     
     
     /*
-    Si associa il valore di aggiornamento al secondo parametro del pacchetto di richiesta per
-    decidere se convalidare o invalidare il Vanilla Green Pass che eventualmente è associato al codice di
-    tessera sanitaria fornito all'avvio.
+    --Associamo il valore dell'aggiornamento al secondo parametro del pacchetto di richiesta per
+    decidere se convalidare o invalidare il Vanilla Green Pass
     */
     newClientT_Request->updateValue = newGreenPassStatus;
     
@@ -87,10 +81,8 @@ void updateGreenPass (int serverG_SocketFileDescriptor, const void * codiceTesse
     
     
     /*
-    Si analizzerà il valore relativo all'esito dell'aggiornamento: se risulta
-    essere FALSE, allora significa che l'aggiornamento non è andato a buon fine. Al contrario, se l'esito
-    dell'aggiornamento è TRUE, significa che lo stato di validità del Vanilla Green Pass è stato aggiornato
-    correttamente.
+    --Analizziamo il valore relativo all'esito dell'aggiornamento: se risulta essere FALSE, allora significa che l'aggiornamento
+     non è andato a buon fine, altrimenti  significa che lo stato di validità del Vanilla Green Pass è stato aggiornato correttamente.
     */
     if (newServerG_Reply->updateResult == FALSE) {
         if (fprintf(stdout, "\nL'aggiornamento del Green Pass associato alla tessera sanitaria %s, non e' andato a buon fine.\nArrivederci.\n", newServerG_Reply->codiceTesseraSanitaria) < 0) raiseError(FPRINTF_SCOPE, FPRINTF_ERROR);
