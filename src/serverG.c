@@ -90,7 +90,7 @@ void clientS_RequestHandler (int connectionFileDescriptor, int serverV_SFD) {
     if ((fullReadReturnValue = fullRead(serverV_SFD, (void *) newServerV_Reply, sizeof(* newServerV_Reply))) != 0) raiseError(FULL_READ_SCOPE, (int) fullReadReturnValue);
     
     
-    // Copiamo i parametri del pacchetto di risposta del ServerV nel pacchetto da inviare al ClientS
+    //--Copiamo i parametri del pacchetto di risposta del ServerV nel pacchetto da inviare al ClientS
     strncpy((char *) newServerG_Reply->codiceTesseraSanitaria, (const char *) newServerV_Reply->codiceTesseraSanitaria, LUNGHEZZA_CODICE_TESSERA_SANITARIA);
     newServerG_Reply->requestResult = newServerV_Reply->requestResult;
     // fullWrite per inviare il pacchetto al ClientS.
