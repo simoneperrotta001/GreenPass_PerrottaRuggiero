@@ -1,7 +1,7 @@
 #ifndef GreenPassUtility_h
 #define GreenPassUtility_h
 
-#include "NetWrapper.h"
+#include "WrapperFunction.h"
 
 
 
@@ -25,7 +25,7 @@ typedef struct {
     char codiceTesseraSanitaria[LUNGHEZZA_CODICE_TESSERA_SANITARIA];
     char dataScadenzaGreenPass[LUNGHEZZA_DATA];
     unsigned short int requestResult;
-} centroVaccinaleReplyToClientCitizen;
+} centroVaccinaleReplyToclientUtente;
 
 typedef struct {
     char codiceTesseraSanitaria[LUNGHEZZA_CODICE_TESSERA_SANITARIA];

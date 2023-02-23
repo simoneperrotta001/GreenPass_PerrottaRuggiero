@@ -1,5 +1,5 @@
-#ifndef NetWrapper_h
-#define NetWrapper_h
+#ifndef WrapperFunction_h
+#define WrapperFunction_h
 
 #include "UsageUtility.h"
 
@@ -47,4 +47,4 @@ void    wlisten             (int socketFileDescriptor,  int backlog             
 int     waccept             (int socketFileDescriptor,  struct sockaddr * restrict address, socklen_t * restrict addressLength  );
 void    checkIP             (char * IP_string                                                                                   );
 
-#endif /* NetWrapper_h */
+#endif /* WrapperFunction_h */

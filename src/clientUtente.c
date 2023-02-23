@@ -1,9 +1,9 @@
-#include "clientCitizen.h"
+#include "clientUtente.h"
 
 int main (int argc, char * argv[]) {
     char * codiceTesseraSanitaria;
     //--Controlliamo il formato della tessera sanitaria e creiamo un socket file descriptor, che verrà poi restituito, collegato al centroVaccinale.
-    int centroVaccinaleSFD = setupClientCitizen(argc, argv, & codiceTesseraSanitaria);
+    int centroVaccinaleSFD = setupclientUtente(argc, argv, & codiceTesseraSanitaria);
     codiceTesseraSanitaria[LUNGHEZZA_CODICE_TESSERA_SANITARIA - 1] = '\0';
 
     /*
@@ -17,13 +17,13 @@ int main (int argc, char * argv[]) {
     exit(0);
 }
 
-int setupClientCitizen (int argc, char * argv[], char ** codiceTesseraSanitaria) {
+int setupclientUtente (int argc, char * argv[], char ** codiceTesseraSanitaria) {
     int centroVaccinaleSFD;//lunghezzaCodiceTessera,
     struct sockaddr_in centroVaccinaleIndirizzo;
     char * stringcentroVaccinaleIndirizzoIP = NULL;
     unsigned short int centroVaccinalePorta;
     
-    //--Verifichiamo che il clientCitizen sia stato avviato con i parametri corretti
+    //--Verifichiamo che il clientUtente sia stato avviato con i parametri corretti
     checkUsage(argc, (const char **) argv, NUMERO_PARAMETRI_CLIENT_CITIZEN, messaggioAtteso);
     //--Verichiamo che il codice di tessera sanitaria immesso sia del formato e della lunghezza giusta
     checkHealtCardNumber(argv[1]);
@@ -53,7 +53,7 @@ int setupClientCitizen (int argc, char * argv[], char ** codiceTesseraSanitaria)
 void somministraVaccinazione (int centroVaccinaleSFD, const void * codiceTesseraSanitaria, size_t lunghezzaCodiceTessera) {
     ssize_t fullWriteReturnValue, fullReadReturnValue;
     //--Allochiamo memoria per il pacchetto di risposta del centroVaccinale
-    centroVaccinaleReplyToClientCitizen * rispostaCentroVaccinale = (centroVaccinaleReplyToClientCitizen *) calloc(1, sizeof(* rispostaCentroVaccinale));
+    centroVaccinaleReplyToclientUtente * rispostaCentroVaccinale = (centroVaccinaleReplyToclientUtente *) calloc(1, sizeof(* rispostaCentroVaccinale));
     if (!rispostaCentroVaccinale) raiseError(CALLOC_SCOPE, CALLOC_ERROR);
     
     //fullWrite per la scrittura e invio del codice della tessera sanitaria al Centro Vaccinale
@@ -70,7 +70,7 @@ void somministraVaccinazione (int centroVaccinaleSFD, const void * codiceTessera
     somministrare una nuova dose di vaccino, in quanto non è passato abbastanza tempo da superare la soglia
     minima per effettuare una nuova vaccinazione. Se invece il valore del terzo campo sarà TRUE, allora
     significa che la vaccinazione è andata a buon fine.
-    Successivamente attraverso il ClientCitizen liberiamo la memoria occupata, rilascia le risorse e chiude il socket file descriptor richiesto in precedenza.*/
+    Successivamente attraverso il clientUtente liberiamo la memoria occupata, rilascia le risorse e chiude il socket file descriptor richiesto in precedenza.*/
     if (rispostaCentroVaccinale->requestResult == FALSE) {
         if (fprintf(stdout, "\nNon può al momento ricevere un'altra somministrazione di vaccino. \n E' necessario che passino altri %d mesi dall'ultima somministrazione.\nLa data a partire dalla quale può effettuare l'ulteriore somministrazione e': %s\n", MESI_ATTESA_PROSSIMA_SOMMINISTRAZIONE, rispostaCentroVaccinale->dataScadenzaGreenPass) < 0) raiseError(FPRINTF_SCOPE, FPRINTF_ERROR);
     } else {

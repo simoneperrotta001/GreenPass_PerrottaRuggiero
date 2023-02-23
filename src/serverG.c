@@ -64,7 +64,7 @@ int main (int argc, char * argv[]) {
             wclose(serverV_SFD);
             exit(0);
         }
-        // Padre che chiude il socket file descriptor che realizza la connessione con il ClientCitizen collegatosi.
+        // Padre che chiude il socket file descriptor che realizza la connessione con il clientUtente collegatosi.
         wclose(connectionFileDescriptor);
     }
 }

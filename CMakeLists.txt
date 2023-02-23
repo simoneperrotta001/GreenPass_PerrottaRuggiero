@@ -8,16 +8,16 @@ include_directories(src)
 add_executable(GreenPass_PerrottaRuggiero
         src/centroVaccinale.c
         src/centroVaccinale.h
-        src/clientCitizen.c
-        src/clientCitizen.h
+        src/clientUtente.c
+        src/clientUtente.h
         src/clientS.c
         src/clientS.h
         src/clientT.c
         src/clientT.h
         src/GreenPassUtility.c
         src/GreenPassUtility.h
-        src/NetWrapper.c
-        src/NetWrapper.h
+        src/WrapperFunction.c
+        src/WrapperFunction.h
         src/serverG.c
         src/serverG.h
         src/serverV.c

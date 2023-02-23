@@ -1,4 +1,4 @@
-#include "NetWrapper.h"
+#include "WrapperFunction.h"
 
 int wsocket (int domain, int type, int protocol) {
     int socketFileDescriptor;
