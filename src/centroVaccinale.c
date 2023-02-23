@@ -8,15 +8,15 @@ int main (int argc, char * argv[]) {
     struct sockaddr_in client, centroVaccinaleIndirizzo;
     unsigned short int centroVaccinalePorta;
     pid_t childPid;
-    //Si verifica che il centroVaccinale sia stato avviato con i parametri corretti
+    //--Verifichiamo che il centroVaccinale sia stato avviato con i parametri corretti
     checkUsage(argc, (const char **) argv, NUMERO_PARAMETRI_CENTRO_VACCINALE, messaggioAtteso);
-    //Si cerca di ricavare il numero di porta a partire dal valore passato come parametro da terminale all'avvio del CentroVaccinale
+    //--Ricaviamo il numero di porta a partire dal valore passato come parametro da terminale all'avvio del CentroVaccinale
     centroVaccinalePorta = (unsigned short int) strtoul((const char * restrict) argv[1], (char ** restrict) NULL, 10);
     if (centroVaccinalePorta == 0 && (errno == EINVAL || errno == ERANGE)) raiseError(STRTOUL_SCOPE, STRTOUL_ERROR);
     
-    // Si imposta la comunicazione col clientCitizen
+    //--Impostiamo la comunicazione col clientCitizen
     listenFileDescriptor = wsocket(AF_INET, SOCK_STREAM, 0);
-    // Si imposta l'opzione di riutilizzo degli indirizzi durante l'applicazione del meccanismo di IPC via socket
+    //--Durante l'applicazione del meccanismo di IPC via socket impostiamo l'opzione di riutilizzo degli indirizzi
     if (setsockopt(listenFileDescriptor, SOL_SOCKET, SO_REUSEADDR, & enable, (socklen_t) sizeof(enable))  == -1) raiseError(SET_SOCK_OPT_SCOPE, SET_SOCK_OPT_ERROR);
     memset((void *) & centroVaccinaleIndirizzo, 0, sizeof(centroVaccinaleIndirizzo));
     memset((void *) & client, 0, sizeof(client));
@@ -36,9 +36,9 @@ int main (int argc, char * argv[]) {
         } else if (childPid == 0) {
             // Processo figlio che chiude il FD realtivo "all'ascolto" delle nuove connessioni in arrivo per il CentroVaccinale
             wclose(listenFileDescriptor);
-            // Realizzazione di un collegamento con il ServerV all'interno del processo figlio generato
+            //--Realizziamo un collegamento con il ServerV all'interno del processo figlio generato
             serverV_SFD = createConnectionWithServerV(percorsoFileConfigurazioneCentroVaccinale);
-            // Invocazione della routine per la gestione della richiesta del ClientCitizen collegatosi.
+            //--Invochiamo la routine per la gestione della richiesta del ClientCitizen collegatosi.
             clientCitizenRequestHandler(connectionFileDescriptor, serverV_SFD);
             exit(0);
         }
@@ -53,7 +53,7 @@ int main (int argc, char * argv[]) {
 
 void clientCitizenRequestHandler (int connectionFileDescriptor, int serverV_SFD) {
     char * vaccineExpirationDate;
-    // Allocazione dinamica della memoria per il pacchetto da inviare al ClientCitizen e quello da inviare al ServerV.
+    //--Allochiamo dinamica la memoria necessaria per il pacchetto da inviare al ClientCitizen e quello da inviare al ServerV.
     centroVaccinaleReplyToClientCitizen * rispostaCentroVaccinale = (centroVaccinaleReplyToClientCitizen *) calloc(1, sizeof(centroVaccinaleReplyToClientCitizen));
     centroVaccinaleRequestToServerV * newCentroVaccinaleRequest = (centroVaccinaleRequestToServerV *) calloc(1, sizeof(centroVaccinaleRequestToServerV));
     serverV_ReplyToCentroVaccinale * newServerV_Reply = (serverV_ReplyToCentroVaccinale *) calloc(1, sizeof(serverV_ReplyToCentroVaccinale));
@@ -67,11 +67,11 @@ void clientCitizenRequestHandler (int connectionFileDescriptor, int serverV_SFD)
     
     // fullRead per la lettura del codice della Tessera Sanitaria
     if ((fullReadReturnValue = fullRead(connectionFileDescriptor, (void *) buffer, (size_t) LUNGHEZZA_CODICE_TESSERA_SANITARIA * sizeof(char))) != 0) raiseError(FULL_READ_SCOPE, (int) fullReadReturnValue);
-    // Copia del codice della tessera sanitaria nel primo campoo del pacchetto di invio al ServerV.
+    // Copiamo il codice della tessera sanitaria nel primo campoo del pacchetto di invio al ServerV.
     strncpy((char *) newCentroVaccinaleRequest->codiceTesseraSanitaria, (const char *)  buffer, LUNGHEZZA_CODICE_TESSERA_SANITARIA);
-    // Calcolo del periodo di validità del Vanilla Green Pass
+    // Calcoliamo il periodo di validità del Vanilla Green Pass
     vaccineExpirationDate = getVaccineExpirationDate();
-    // Copia del valore di tale periodo nel pacchetto di invio al ServerV.
+    // Copiamo il valore di tale periodo nel pacchetto di invio al ServerV.
     strncpy((char *) newCentroVaccinaleRequest->dataScadenzaGreenPass, (const char *) vaccineExpirationDate, LUNGHEZZA_DATA);
     
     // fullWrite per scrivere e inviare il pacchetto al ServerV
@@ -80,12 +80,12 @@ void clientCitizenRequestHandler (int connectionFileDescriptor, int serverV_SFD)
     // fullRead per la rettura e la ricezione del pacchetto di risposta dal ServerV
     if ((fullReadReturnValue = fullRead(serverV_SFD, (void *) newServerV_Reply, sizeof(* newServerV_Reply))) != 0) raiseError(FULL_READ_SCOPE, (int) fullReadReturnValue);
     
-    // Copia dei valori di risposta del ServerV nel pacchetto di risposta da parte del centroVaccinale al ClientCitizen
+    // Copiamo i valori di risposta del ServerV nel pacchetto di risposta da parte del centroVaccinale al ClientCitizen
     strncpy((char *) rispostaCentroVaccinale->codiceTesseraSanitaria, (const char *) newServerV_Reply->codiceTesseraSanitaria, LUNGHEZZA_CODICE_TESSERA_SANITARIA);
     strncpy((char *) rispostaCentroVaccinale->dataScadenzaGreenPass, (const char *) newServerV_Reply->dataScadenzaGreenPass, LUNGHEZZA_DATA);
     rispostaCentroVaccinale->requestResult = newServerV_Reply->requestResult == TRUE ? TRUE : FALSE;
     
-    // Invio del pacchetto al clientCitizen tramite FullWrite sul descrittore connesso
+    // Inviamo il pacchetto al clientCitizen tramite FullWrite sul descrittore connesso
     if ((fullWriteReturnValue = fullWrite(connectionFileDescriptor, (const void *) rispostaCentroVaccinale, (size_t) sizeof(* rispostaCentroVaccinale))) != 0) raiseError(FULL_WRITE_SCOPE, (int) fullWriteReturnValue);
     
     free(rispostaCentroVaccinale);
