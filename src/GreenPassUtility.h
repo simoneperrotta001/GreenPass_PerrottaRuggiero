@@ -74,10 +74,10 @@ enum sender {
     clientT_viaServerG_Sender
 };
 
-void checkCodiceTesseraSanitaria           (char * codiceTesseraSanitaria);
-void ritornaDatiDiConfigurazione      (const char * percorsoFileConfigurazione, char ** configurationIP, unsigned short int * configurationPort);
+void checkCodiceTesseraSanitaria  (char * codiceTesseraSanitaria);
+void ritornaDatiDiConfigurazione  (const char * percorsoFileConfigurazione, char ** configurationIP, unsigned short int * configurationPort);
 char * getdataScadenzaVaccino     (void );
-char * getNowDate                   (void );
+char * getNowDate                 (void );
 int creaConnessioneConServerV     (const char * percorsoFileConfigurazione);
 
-#endif /* GreenPassUtility_h */
+#endif

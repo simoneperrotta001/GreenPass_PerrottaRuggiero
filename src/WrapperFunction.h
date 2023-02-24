@@ -3,8 +3,6 @@
 
 #include "UsageUtility.h"
 
-
-
 #define LISTEN_QUEUE_SIZE 1024
 
 #define SOCKET_ERROR 100
@@ -39,12 +37,12 @@
 
 
 
-int     wsocket             (int domain,                int type,                           int protocol                        );
-void    wconnect            (int socketFileDescriptor,  const struct sockaddr * address,    socklen_t addressLength             );
-void    wclose              (int socketFileDescriptor                                                                           );
-void    wbind               (int socketFileDescriptor,  const struct sockaddr * address,    socklen_t addressLength             );
-void    wlisten             (int socketFileDescriptor,  int backlog                                                             );
-int     waccept             (int socketFileDescriptor,  struct sockaddr * restrict address, socklen_t * restrict addressLength  );
-void    checkIP             (char * IP_string                                                                                   );
+int  wsocket  (int dominio, int tipo, int protocollo);
+void wconnect (int socketFD, const struct sockaddr * indirizzo, socklen_t lunghezzaIndirizzo);
+void wclose   (int socketFD);
+void wbind    (int socketFD, const struct sockaddr * indirizzo, socklen_t lunghezzaIndirizzo);
+void wlisten  (int socketFD, int backlog);
+int  waccept  (int socketFD, struct sockaddr * restrict indirizzo, socklen_t * restrict lunghezzaIndirizzo);
+void checkIP  (char * IP_string);
 
-#endif /* WrapperFunction_h */
+#endif

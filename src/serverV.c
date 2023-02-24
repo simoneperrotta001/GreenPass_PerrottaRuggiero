@@ -4,57 +4,57 @@ int main (int argc, char * argv[]) {
     int listenFD, connectionFD, enable = TRUE, threadCreationReturnValue;
     pthread_t singleTID;
     pthread_attr_t attr;
-    unsigned short int serverV_Port, requestIdentifier;
-    struct sockaddr_in serverV_Address, client;
+    unsigned short int serverV_Port, identificatoreRichiesta;
+    struct sockaddr_in serverV_indirizzo, client;
 
     //-- Controlliamo che il ServerG sia stato avviato con i parametri corretti
     checkUtilizzo(argc, (const char **) argv, SERVER_V_ARGS_NO, messaggioAtteso);
     //-- Ricaviamo il numero di porta
     serverV_Port = (unsigned short int) strtoul((const char * restrict) argv[1], (char ** restrict) NULL, 10);
     //--Se il numero di porta non dovesse essere valido viene lanciato un errore
-    if (serverV_Port == 0 && (errno == EINVAL || errno == ERANGE)) lanciaErrore(STRTOUL_SCOPE, STRTOUL_ERROR);
+    if (serverV_Port == 0 && (errno == EINVAL || errno == ERANGE)) raiseError(STRTOUL_SCOPE, STRTOUL_ERROR);
     
     listenFD = wsocket(AF_INET, SOCK_STREAM, 0);
     //--Durante l'applicazione del meccanismo di IPC, con le socket, impostiamo l'opzione di riutilizzo degli indirizzi
-    if (setsockopt(listenFD, SOL_SOCKET, SO_REUSEADDR, & enable, (socklen_t) sizeof(enable))  == -1) lanciaErrore(SET_SOCK_OPT_SCOPE, SET_SOCK_OPT_ERROR);
-    memset((void *) & serverV_Address, 0, sizeof(serverV_Address));
+    if (setsockopt(listenFD, SOL_SOCKET, SO_REUSEADDR, & enable, (socklen_t) sizeof(enable))  == -1) raiseError(SET_SOCK_OPT_SCOPE, SET_SOCK_OPT_ERROR);
+    memset((void *) & serverV_indirizzo, 0, sizeof(serverV_indirizzo));
     memset((void *) & client, 0, sizeof(client));
-    serverV_Address.sin_family      = AF_INET;
-    serverV_Address.sin_addr.s_addr = htonl(INADDR_ANY);
-    serverV_Address.sin_port        = htons(serverV_Port);
-    wbind(listenFD, (struct sockaddr *) & serverV_Address, (socklen_t) sizeof(serverV_Address));
+    serverV_indirizzo.sin_family      = AF_INET;
+    serverV_indirizzo.sin_addr.s_addr = htonl(INADDR_ANY);
+    serverV_indirizzo.sin_port        = htons(serverV_Port);
+    wbind(listenFD, (struct sockaddr *) & serverV_indirizzo, (socklen_t) sizeof(serverV_indirizzo));
     wlisten(listenFD, LISTEN_QUEUE_SIZE * LISTEN_QUEUE_SIZE);
     
     
     //--Inizializziamo un mutex che servirà per effettuare la mutua esclusione per l'accesso al file serverV.dat
-    if (pthread_mutex_init(& fileSystemAccessMutex, (const pthread_mutexattr_t *) NULL) != 0) lanciaErrore(PTHREAD_MUTEX_INIT_SCOPE, PTHREAD_MUTEX_INIT_ERROR);
+    if (pthread_mutex_init(& fileSystemAccessMutex, (const pthread_mutexattr_t *) NULL) != 0) raiseError(PTHREAD_MUTEX_INIT_SCOPE, PTHREAD_MUTEX_INIT_ERROR);
     /*
     --Inizializziamo un mutex su un puntatore a intero che punta a un intero rappresentate il socket file descriptor che
     il singolo thread userà per mettersi in collegamento con il ServerG o con il CentroVaccinale.
     */
-    if (pthread_mutex_init(& connectionFDMutex, (const pthread_mutexattr_t *) NULL) != 0) lanciaErrore(PTHREAD_MUTEX_INIT_SCOPE, PTHREAD_MUTEX_INIT_ERROR);
+    if (pthread_mutex_init(& connectionFDMutex, (const pthread_mutexattr_t *) NULL) != 0) raiseError(PTHREAD_MUTEX_INIT_SCOPE, PTHREAD_MUTEX_INIT_ERROR);
     // --Inizializziamo gli attributi di entrambi i mutex.
-    if (pthread_attr_init(& attr) != 0) lanciaErrore(PTHREAD_MUTEX_ATTR_INIT_SCOPE, PTHREAD_MUTEX_ATTR_INIT_ERROR);
+    if (pthread_attr_init(& attr) != 0) raiseError(PTHREAD_MUTEX_ATTR_INIT_SCOPE, PTHREAD_MUTEX_ATTR_INIT_ERROR);
     /*
     The pthread_detach() function marks the thread identified by
     thread as detached.  When a detached thread terminates, its
     resources are automatically released back to the system without
     the need for another thread to join with the terminated thread.
     */
-    if (pthread_attr_setdetachstate(& attr, PTHREAD_CREATE_DETACHED) != 0) lanciaErrore(PTHREAD_ATTR_DETACH_STATE_SCOPE, PTHREAD_ATTR_DETACH_STATE_ERROR);
+    if (pthread_attr_setdetachstate(& attr, PTHREAD_CREATE_DETACHED) != 0) raiseError(PTHREAD_ATTR_DETACH_STATE_SCOPE, PTHREAD_ATTR_DETACH_STATE_ERROR);
     
     while (TRUE) {
         ssize_t fullReadReturnValue;
         socklen_t lunghezzaIndirizzoClient = (socklen_t) sizeof(client);
         while ((connectionFD = waccept(listenFD, (struct sockaddr *) & client, (socklen_t *) & lunghezzaIndirizzoClient)) < 0 && (errno == EINTR));
         // fullRead per leggere l'ID dell'entità connessa con il ServerV.
-        if ((fullReadReturnValue = fullRead(connectionFD, (void *) & requestIdentifier, sizeof(requestIdentifier))) != 0) lanciaErrore(FULL_READ_SCOPE, (int) fullReadReturnValue);
+        if ((fullReadReturnValue = fullRead(connectionFD, (void *) & identificatoreRichiesta, sizeof(identificatoreRichiesta))) != 0) raiseError(FULL_READ_SCOPE, (int) fullReadReturnValue);
 
         //--Preleviamo il mutex sul socket file descriptor di connessione.
-        if (pthread_mutex_lock(& connectionFDMutex) != 0) lanciaErrore(PTHREAD_MUTEX_LOCK_SCOPE, PTHREAD_MUTEX_LOCK_ERROR);
+        if (pthread_mutex_lock(& connectionFDMutex) != 0) raiseError(PTHREAD_MUTEX_LOCK_SCOPE, PTHREAD_MUTEX_LOCK_ERROR);
         // Allochiamo l'area di memoria necessaria per contenere il duplicato del FD connesso
         int * threadconnectionFD = (int *) calloc(1, sizeof(* threadconnectionFD));
-        if (!threadconnectionFD) lanciaErrore(CALLOC_SCOPE, CALLOC_ERROR);
+        if (!threadconnectionFD) raiseError(CALLOC_SCOPE, CALLOC_ERROR);
         /*
         The dup() system call allocates a new file descriptor that refers
         to the same open file description as the descriptor oldfd. The new
@@ -72,29 +72,29 @@ int main (int argc, char * argv[]) {
         close-on-exec flag).  The close-on-exec flag (FD_CLOEXEC; see
         fcntl(2)) for the duplicate descriptor is off.
          */
-        if ((* threadconnectionFD = dup(connectionFD)) < 0) lanciaErrore(DUP_SCOPE, DUP_ERROR);
+        if ((* threadconnectionFD = dup(connectionFD)) < 0) raiseError(DUP_SCOPE, DUP_ERROR);
         
         // --Rilasciamo il mutex usufruito per il socket file descriptor originale
-        if (pthread_mutex_unlock(& connectionFDMutex) != 0)  lanciaErrore(PTHREAD_MUTEX_UNLOCK_SCOPE, PTHREAD_MUTEX_UNLOCK_ERROR);
+        if (pthread_mutex_unlock(& connectionFDMutex) != 0)  raiseError(PTHREAD_MUTEX_UNLOCK_SCOPE, PTHREAD_MUTEX_UNLOCK_ERROR);
         // Individuiamo la routine apposita da invocare a seconda del mittente della richiesta pervenuta al ServerV
-        switch (requestIdentifier) {
+        switch (identificatoreRichiesta) {
             // Gestione servizio per il Centro vaccinale.
             case centroVaccinaleSender:
                 //--Sempre con lo stesso TID creiamo un thread apposito per gestire il servizio.
-                if ((threadCreationReturnValue = pthread_create(& singleTID, & attr, & centroVaccinaleRequestHandler, threadconnectionFD)) != 0) lanciaErrore(PTHREAD_CREATE_SCOPE, PTHREAD_CREATE_ERROR);
+                if ((threadCreationReturnValue = pthread_create(& singleTID, & attr, & centroVaccinaleRequestHandler, threadconnectionFD)) != 0) raiseError(PTHREAD_CREATE_SCOPE, PTHREAD_CREATE_ERROR);
                 break;
             // Gestione servizio per il ClientS via ServerG.
             case clientS_viaServerG_Sender:
                 //--Sempre con lo stesso TID creiamo un thread apposito per gestire il servizio.
-                if ((threadCreationReturnValue = pthread_create(& singleTID, & attr, & clientS_viaServerG_RequestHandler, threadconnectionFD)) != 0) lanciaErrore(PTHREAD_CREATE_SCOPE, PTHREAD_CREATE_ERROR);
+                if ((threadCreationReturnValue = pthread_create(& singleTID, & attr, & clientS_viaServerG_RequestHandler, threadconnectionFD)) != 0) raiseError(PTHREAD_CREATE_SCOPE, PTHREAD_CREATE_ERROR);
                 break;
             // Gestione servizio per il ClientT via ServerG.
             case clientT_viaServerG_Sender:
                 //--Sempre con lo stesso TID creiamo un thread apposito per gestire il servizio.
-                if ((threadCreationReturnValue = pthread_create(& singleTID, & attr, & clientT_viaServerG_RequestHandler, threadconnectionFD)) != 0) lanciaErrore(PTHREAD_CREATE_SCOPE, PTHREAD_CREATE_ERROR);
+                if ((threadCreationReturnValue = pthread_create(& singleTID, & attr, & clientT_viaServerG_RequestHandler, threadconnectionFD)) != 0) raiseError(PTHREAD_CREATE_SCOPE, PTHREAD_CREATE_ERROR);
                 break;
             default:
-                lanciaErrore(INVALID_SENDER_ID_SCOPE, INVALID_SENDER_ID_ERROR);
+                raiseError(INVALID_SENDER_ID_SCOPE, INVALID_SENDER_ID_ERROR);
                 break;
         }
         /*
@@ -104,7 +104,7 @@ int main (int argc, char * argv[]) {
         wclose(connectionFD);
     }
     //--Visto che si è allocata memoria dinamica in precedenza deallochiamo tale memoria invocando destory su tutti gli attributi
-    if (pthread_attr_destroy(& attr) != 0) lanciaErrore(PTHREAD_MUTEX_ATTR_DESTROY_SCOPE, PTHREAD_MUTEX_ATTR_DESTROY_ERROR);
+    if (pthread_attr_destroy(& attr) != 0) raiseError(PTHREAD_MUTEX_ATTR_DESTROY_SCOPE, PTHREAD_MUTEX_ATTR_DESTROY_ERROR);
     wclose(listenFD);
     exit(0);
 }
@@ -114,11 +114,11 @@ void * centroVaccinaleRequestHandler (void * args) {
     -- Utilizziamo il mutex per deferenziare in mutua esclusione il valore contenuto nel puntatore della routine assegnata
      al thread e deallocare la memoria dinamica ad esso associata.
     */
-    if (pthread_mutex_lock(& connectionFDMutex) != 0) threadlanciaErrore(PTHREAD_MUTEX_LOCK_SCOPE, PTHREAD_MUTEX_LOCK_ERROR);
+    if (pthread_mutex_lock(& connectionFDMutex) != 0) threadraiseError(PTHREAD_MUTEX_LOCK_SCOPE, PTHREAD_MUTEX_LOCK_ERROR);
     int threadconnectionFD = * ((int *) args);
     free(args);
     //-- Rilasciamo il mutex
-    if (pthread_mutex_unlock(& connectionFDMutex) != 0) threadlanciaErrore(PTHREAD_MUTEX_UNLOCK_SCOPE, PTHREAD_MUTEX_UNLOCK_ERROR);
+    if (pthread_mutex_unlock(& connectionFDMutex) != 0) threadraiseError(PTHREAD_MUTEX_UNLOCK_SCOPE, PTHREAD_MUTEX_UNLOCK_ERROR);
     ssize_t fullWriteReturnValue, fullReadReturnValue, getLineBytes;
     size_t effectiveLineLength = 0;
     char * singleLine = NULL, * nowDateString = NULL;
@@ -299,11 +299,11 @@ void * clientS_viaServerG_RequestHandler(void * args) {
      * -- Utilizziamo il mutex per deferenziare, in mutua esclusione, il valore contenuto nel puntatore della routine assegnata
      al thread.
     */
-    if (pthread_mutex_lock(& connectionFDMutex) != 0) threadlanciaErrore(PTHREAD_MUTEX_LOCK_SCOPE, PTHREAD_MUTEX_LOCK_ERROR);
+    if (pthread_mutex_lock(& connectionFDMutex) != 0) threadraiseError(PTHREAD_MUTEX_LOCK_SCOPE, PTHREAD_MUTEX_LOCK_ERROR);
     int threadconnectionFD = * ((int *) args);
     free(args);
     //--Rilasciamo il mutex
-    if (pthread_mutex_unlock(& connectionFDMutex) != 0) threadlanciaErrore(PTHREAD_MUTEX_UNLOCK_SCOPE, PTHREAD_MUTEX_UNLOCK_ERROR);
+    if (pthread_mutex_unlock(& connectionFDMutex) != 0) threadraiseError(PTHREAD_MUTEX_UNLOCK_SCOPE, PTHREAD_MUTEX_UNLOCK_ERROR);
     ssize_t fullWriteReturnValue, fullReadReturnValue, getLineBytes;
     size_t effectiveLineLength = 0;
     char * singleLine = NULL, * nowDateString = NULL;
@@ -425,11 +425,11 @@ void * clientT_viaServerG_RequestHandler(void * args) {
      * -- Utilizziamo il mutex per deferenziare, in mutua esclusione, il valore contenuto nel puntatore della routine assegnata
      al thread.
     */
-    if (pthread_mutex_lock(& connectionFDMutex) != 0) threadlanciaErrore(PTHREAD_MUTEX_LOCK_SCOPE, PTHREAD_MUTEX_LOCK_ERROR);
+    if (pthread_mutex_lock(& connectionFDMutex) != 0) threadraiseError(PTHREAD_MUTEX_LOCK_SCOPE, PTHREAD_MUTEX_LOCK_ERROR);
     int threadconnectionFD = * ((int *) args);
     free(args);
     // Rilasciamo il mutex
-    if (pthread_mutex_unlock(& connectionFDMutex) != 0) threadlanciaErrore(PTHREAD_MUTEX_UNLOCK_SCOPE, PTHREAD_MUTEX_UNLOCK_ERROR);
+    if (pthread_mutex_unlock(& connectionFDMutex) != 0) threadraiseError(PTHREAD_MUTEX_UNLOCK_SCOPE, PTHREAD_MUTEX_UNLOCK_ERROR);
     ssize_t fullWriteReturnValue, fullReadReturnValue, getLineBytes;
     size_t effectiveLineLength = 0;
     char * singleLine = NULL;;
@@ -572,5 +572,5 @@ void threadAbort (char * errorScope, int exitCode, int threadconnectionFD, void 
         while ((currentElement = va_arg(argumentsList, void *)) != 0) free(currentElement);
         va_end(argumentsList);
     }
-    threadlanciaErrore(errorScope, exitCode);
+    threadraiseError(errorScope, exitCode);
 }
