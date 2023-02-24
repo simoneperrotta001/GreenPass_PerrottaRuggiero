@@ -75,9 +75,9 @@ enum sender {
 };
 
 void checkCodiceTesseraSanitaria  (char * codiceTesseraSanitaria);
-void getDatiDiConfigurazione  (const char * percorsoFileConfigurazione, char ** IPConfigurazione, unsigned short int * portaConfigurazione);
-char * getdataScadenzaVaccino     (void );
-char * getdataAttuale                 (void );
+void getDatiDiConfigurazione      (const char * percorsoFileConfigurazione, char ** IPConfigurazione, unsigned short int * portaConfigurazione);
+char * getdataScadenzaVaccino     (void);
+char * getdataAttuale             (void );
 int creaConnessioneConServerV     (const char * percorsoFileConfigurazione);
 
 #endif

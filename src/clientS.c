@@ -46,7 +46,7 @@ int setupClientS (int argc, char * argv[], char ** codiceTesseraSanitaria) {
         raiseError(INET_PTON_SCOPE, INET_PTON_ERROR);
     //--Ci connettiamo al serverG per poter effettuare l'eventuale modifica allo stato di validità del GreenPass
     wconnect(serverG_SFD, (struct sockaddr *) & serverGIndrizzo, (socklen_t) sizeof(serverGIndrizzo));
-    if (fprintf(stdout, "\nVerifica GreenPass\nNumero tessera sanitaria: %s\n\n... A breve verra' mostrato se il GreenPass inserito risulta essere valido...\n", * codiceTesseraSanitaria) < 0)
+    if (fprintf(stdout, "\nVerifica GreenPass\nNumero tessera sanitaria: %s\nA breve verra' mostrato se il GreenPass inserito risulta essere valido.\n", * codiceTesseraSanitaria) < 0)
         raiseError(FPRINTF_SCOPE, FPRINTF_ERROR);
     free(stringServerG_IP);
     return serverG_SFD;
@@ -61,7 +61,7 @@ void checkGreenPass (int serverG_SFD, const void * codiceTesseraSanitaria, size_
     if (!nuovaRispostaServerG)
         raiseError(CALLOC_SCOPE, CALLOC_ERROR);
     
-    if (fprintf(stdout, "\n... Verifica in corso ...\n") < 0) raiseError(FPRINTF_SCOPE, FPRINTF_ERROR);
+    if (fprintf(stdout, "\nLoading\n") < 0) raiseError(FPRINTF_SCOPE, FPRINTF_ERROR);
     // fullWrite per la scrittura e invio dell'ID del ClientS al ServerG
     if ((fullWriteReturnValue = fullWrite(serverG_SFD, (const void *) & clientS_SenderID, sizeof(clientS_SenderID))) != 0)
         raiseError(FULL_WRITE_SCOPE, (int) fullWriteReturnValue);
