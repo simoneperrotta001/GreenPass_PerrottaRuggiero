@@ -487,7 +487,7 @@ void * clientT_viaServerG_RequestHandler(void * args) {
         if ((strncmp((const char *) nuovaRispostaServerV->codiceTesseraSanitaria, (const char *) singleLine, LUNGHEZZA_CODICE_TESSERA_SANITARIA - 1)) == 0) {
             //--Se c'è
             codiceTesseraSanitariaTrovato = TRUE;
-            //--Salviamo la data di scadenza del Vannila  GreenPass
+            //--Salviamo la data di scadenza del GreenPass
             strncpy((char *) dateCopiedFromFile, (const char *) singleLine + LUNGHEZZA_CODICE_TESSERA_SANITARIA, LUNGHEZZA_DATA - 1);
             dateCopiedFromFile[LUNGHEZZA_DATA - 1] = '\0';
             break;
