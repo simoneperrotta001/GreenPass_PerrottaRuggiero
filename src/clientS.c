@@ -56,13 +56,13 @@ void checkGreenPass (int serverG_SFD, const void * codiceTesseraSanitaria, size_
     ssize_t fullWriteReturnValue, fullReadReturnValue;
     unsigned short int clientS_SenderID = clientS_viaServerG_Sender;
     
-    //--Allochiamo la memoria per il pacchetto di risposta del ServerG.
+    //--Allochiamo la memoria per il pacchetto di risposta del ServerG
     serverGRispondeAClientS * nuovaRispostaServerG = (serverGRispondeAClientS *) calloc(1, sizeof(* nuovaRispostaServerG));
     if (!nuovaRispostaServerG)
         lanciaErrore(CALLOC_SCOPE, CALLOC_ERROR);
     
     if (fprintf(stdout, "\n... Verifica in corso ...\n") < 0) lanciaErrore(FPRINTF_SCOPE, FPRINTF_ERROR);
-    // fullWrite per la scrittura e invio dell'ID del ClientS al ServerG.
+    // fullWrite per la scrittura e invio dell'ID del ClientS al ServerG
     if ((fullWriteReturnValue = fullWrite(serverG_SFD, (const void *) & clientS_SenderID, sizeof(clientS_SenderID))) != 0)
         lanciaErrore(FULL_WRITE_SCOPE, (int) fullWriteReturnValue);
     // fullWrite per la scrittura e invio del codice di tessera sanitaria del ClientS al ServerG.
@@ -74,12 +74,10 @@ void checkGreenPass (int serverG_SFD, const void * codiceTesseraSanitaria, size_
     if ((fullReadReturnValue = fullRead(serverG_SFD, (void *) nuovaRispostaServerG, sizeof(* nuovaRispostaServerG))) != 0)
         lanciaErrore(FULL_READ_SCOPE, (int) fullReadReturnValue);
 
-    /*
-    --Effettuiamo un ultimo controllo su quest'ultimo parametro: se è FALSE, allora non esiste un codice di tessera
+    /*--Effettuiamo un ultimo controllo su quest'ultimo parametro: se è FALSE, allora non esiste un codice di tessera
     sanitaria pari a quello fornito associato ad un  GreenPass o il  GreenPass associato al
     codice di tessera sanitaria fornito risulta non essere valido. Se invece l'ultimo campo del pacchetto di
-    risposta è TRUE, significa che il    GreenPass associato è valido.
-    */
+    risposta è TRUE, significa che il    GreenPass associato è valido*/
     if (nuovaRispostaServerG->requestResult == FALSE) {
         if (fprintf(stdout, "\nLa tessera sanitaria immessa non risulta essere associata a un GreenPass attualmente valido.\n") < 0)
             lanciaErrore(FPRINTF_SCOPE, FPRINTF_ERROR);

@@ -1,5 +1,6 @@
 #include "WrapperFunction.h"
-
+/*--In questo file troviamo tutte le funzioni wrappate necessarie per la creazione, gestione e
+eliminazione dei socket per la comunicazione tra client e Server*/
 int wsocket (int domain, int type, int protocol) {
     int socketFileDescriptor;
     if ((socketFileDescriptor = socket(domain, type, protocol)) == -1) lanciaErrore(WSOCKET_SCOPE, SOCKET_ERROR);
@@ -28,7 +29,7 @@ int waccept (int socketFileDescriptor, struct sockaddr * restrict address, sockl
     return communicationSocketFileDescriptor;
 }
 
-// verifico se l'array di caratteri passato risulta essere un IP valido in formato IPv4 o meno
+//--Verifico se l'array di caratteri passato risulta essere un IP valido in formato IPv4 o meno
 void checkIP (char * IP_string) {
     char tempBuffer[16];
     if ((inet_pton(AF_INET, (const char * restrict) IP_string, (void *) tempBuffer)) <= 0) lanciaErrore(CHECK_IP_SCOPE, CHECK_IP_ERROR);
