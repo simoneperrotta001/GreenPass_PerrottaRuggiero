@@ -454,7 +454,7 @@ void * clientT_viaServerG_RequestHandler(void * args) {
 
     
     //--Allochiamo memoria per i pacchetti: il primo proveniente dal ServerG e il secondo di risposta dal ServerV.
-    serverGRIchiedeAServerV_PerContoDiClientT * newServerG_Request = (serverGRIchiedeAServerV_PerContoDiClientT *) calloc(1, sizeof(* newServerG_Request));
+    serverGRichiedeAServerV_PerContoDiClientT * newServerG_Request = (serverGRichiedeAServerV_PerContoDiClientT *) calloc(1, sizeof(* newServerG_Request));
     if (!newServerG_Request)
         threadAbort(CALLOC_SCOPE, CALLOC_ERROR, threadconnectionFD, NULL);
 

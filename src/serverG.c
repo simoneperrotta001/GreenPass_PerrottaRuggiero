@@ -110,7 +110,7 @@ void clientT_RequestHandler (int connectionFD, int serverV_SFD) {
     */
     clientTRichiedeAServerG * nuovaRichiestaClientT = (clientTRichiedeAServerG *) calloc(1, sizeof(* nuovaRichiestaClientT));
     serverGRispondeAClientT * nuovaRispostaServerG = (serverGRispondeAClientT *) calloc(1, sizeof(* nuovaRispostaServerG));
-    serverGRIchiedeAServerV_PerContoDiClientT * newServerG_Request = (serverGRIchiedeAServerV_PerContoDiClientT *) calloc(1, sizeof(* newServerG_Request));
+    serverGRichiedeAServerV_PerContoDiClientT * newServerG_Request = (serverGRichiedeAServerV_PerContoDiClientT *) calloc(1, sizeof(* newServerG_Request));
     serverVRispondeAServerGVersoClientT * nuovaRispostaServerV = (serverVRispondeAServerGVersoClientT *) calloc(1, sizeof(* nuovaRispostaServerV));
     if (!nuovaRispostaServerG) raiseError(CALLOC_SCOPE, CALLOC_ERROR);
     if (!nuovaRispostaServerV) raiseError(CALLOC_SCOPE, CALLOC_ERROR);
