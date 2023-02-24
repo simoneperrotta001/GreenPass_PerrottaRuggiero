@@ -3,8 +3,6 @@
 
 #include "WrapperFunction.h"
 
-
-
 #define CHECK_HEALTH_CARD_NUMBER_SCOPE "checkcodiceTesseraSanitaria"
 #define CHECK_HEALTH_CARD_NUMBER_ERROR 200
 
@@ -18,8 +16,6 @@
 #define LUNGHEZZA_CODICE_TESSERA_SANITARIA 17
 #define LUNGHEZZA_DATA 11
 #define MESI_IN_ANNO 12
-
-
 
 typedef struct {
     char codiceTesseraSanitaria[LUNGHEZZA_CODICE_TESSERA_SANITARIA];
@@ -41,17 +37,17 @@ typedef struct {
 typedef struct {
     char codiceTesseraSanitaria[LUNGHEZZA_CODICE_TESSERA_SANITARIA];
     unsigned short int requestResult;
-} serverV_ReplyToServerG_clientS;
+} serverVRispondeAServerGVersoClientS;
 
 typedef struct {
     char codiceTesseraSanitaria[LUNGHEZZA_CODICE_TESSERA_SANITARIA];
     unsigned short int updateValue;
-} serverG_RequestToServerV_onBehalfOfClientT;
+} serverGRIchiedeAServerV_PerContoDiClientT;
 
 typedef struct {
     char codiceTesseraSanitaria[LUNGHEZZA_CODICE_TESSERA_SANITARIA];
     unsigned short int updateResult;
-} serverV_ReplyToServerG_clientT;
+} serverVRispondeAServerGVersoClientT;
 
 typedef struct {
     char codiceTesseraSanitaria[LUNGHEZZA_CODICE_TESSERA_SANITARIA];

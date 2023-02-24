@@ -78,7 +78,7 @@ void clientS_RequestHandler (int connectionFD, int serverV_SFD) {
     
     //--Allochiamo dinamicamente la memoria necessaria per il pacchetto da inviare al ClientS e quello da ricevere dal ServerV.
     serverGRispondeAClientS * nuovaRispostaServerG = (serverGRispondeAClientS *) calloc(1, sizeof(* nuovaRispostaServerG));
-    serverV_ReplyToServerG_clientS * nuovaRispostaServerV = (serverV_ReplyToServerG_clientS *) calloc(1, sizeof(* nuovaRispostaServerV));
+    serverVRispondeAServerGVersoClientS * nuovaRispostaServerV = (serverVRispondeAServerGVersoClientS *) calloc(1, sizeof(* nuovaRispostaServerV));
     if (!nuovaRispostaServerG) raiseError(CALLOC_SCOPE, CALLOC_ERROR);
     if (!nuovaRispostaServerV) raiseError(CALLOC_SCOPE, CALLOC_ERROR);
     
@@ -110,8 +110,8 @@ void clientT_RequestHandler (int connectionFD, int serverV_SFD) {
     */
     clientTRichiedeAServerG * nuovaRichiestaClientT = (clientTRichiedeAServerG *) calloc(1, sizeof(* nuovaRichiestaClientT));
     serverGRispondeAClientT * nuovaRispostaServerG = (serverGRispondeAClientT *) calloc(1, sizeof(* nuovaRispostaServerG));
-    serverG_RequestToServerV_onBehalfOfClientT * newServerG_Request = (serverG_RequestToServerV_onBehalfOfClientT *) calloc(1, sizeof(* newServerG_Request));
-    serverV_ReplyToServerG_clientT * nuovaRispostaServerV = (serverV_ReplyToServerG_clientT *) calloc(1, sizeof(* nuovaRispostaServerV));
+    serverGRIchiedeAServerV_PerContoDiClientT * newServerG_Request = (serverGRIchiedeAServerV_PerContoDiClientT *) calloc(1, sizeof(* newServerG_Request));
+    serverVRispondeAServerGVersoClientT * nuovaRispostaServerV = (serverVRispondeAServerGVersoClientT *) calloc(1, sizeof(* nuovaRispostaServerV));
     if (!nuovaRispostaServerG) raiseError(CALLOC_SCOPE, CALLOC_ERROR);
     if (!nuovaRispostaServerV) raiseError(CALLOC_SCOPE, CALLOC_ERROR);
     if (!nuovaRichiestaClientT) raiseError(CALLOC_SCOPE, CALLOC_ERROR);

@@ -325,7 +325,7 @@ void * clientS_viaServerG_RequestHandler(void * args) {
 
     
     //--Allocchiamo la memoria per il pacchetto risposta del ServerV
-    serverV_ReplyToServerG_clientS * nuovaRispostaServerV = (serverV_ReplyToServerG_clientS *) calloc(1, sizeof(* nuovaRispostaServerV));
+    serverVRispondeAServerGVersoClientS * nuovaRispostaServerV = (serverVRispondeAServerGVersoClientS *) calloc(1, sizeof(* nuovaRispostaServerV));
     if (!nuovaRispostaServerV)
         threadAbort(CALLOC_SCOPE, CALLOC_ERROR, threadconnectionFD, NULL);
 
@@ -454,11 +454,11 @@ void * clientT_viaServerG_RequestHandler(void * args) {
 
     
     //--Allochiamo memoria per i pacchetti: il primo proveniente dal ServerG e il secondo di risposta dal ServerV.
-    serverG_RequestToServerV_onBehalfOfClientT * newServerG_Request = (serverG_RequestToServerV_onBehalfOfClientT *) calloc(1, sizeof(* newServerG_Request));
+    serverGRIchiedeAServerV_PerContoDiClientT * newServerG_Request = (serverGRIchiedeAServerV_PerContoDiClientT *) calloc(1, sizeof(* newServerG_Request));
     if (!newServerG_Request)
         threadAbort(CALLOC_SCOPE, CALLOC_ERROR, threadconnectionFD, NULL);
 
-    serverV_ReplyToServerG_clientT * nuovaRispostaServerV = (serverV_ReplyToServerG_clientT *) calloc(1, sizeof(* nuovaRispostaServerV));
+    serverVRispondeAServerGVersoClientT * nuovaRispostaServerV = (serverVRispondeAServerGVersoClientT *) calloc(1, sizeof(* nuovaRispostaServerV));
     if (!nuovaRispostaServerV)
         threadAbort(CALLOC_SCOPE, CALLOC_ERROR, threadconnectionFD, newServerG_Request);
 
