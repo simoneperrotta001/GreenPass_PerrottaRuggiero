@@ -36,7 +36,7 @@ int setupclientUtente (int argc, char * argv[], char ** codiceTesseraSanitaria) 
     strncpy(* codiceTesseraSanitaria, (const char *) argv[1], LUNGHEZZA_CODICE_TESSERA_SANITARIA - 1);
 
     //--Ricaviamo i parametri  per contattare il centroVaccinale
-    ritornaDatiDiConfigurazione(percorsoFileConfigurazione, & stringcentroVaccinaleIndirizzoIP, & centroVaccinalePorta);
+    getDatiDiConfigurazione(percorsoFileConfigurazione, & stringcentroVaccinaleIndirizzoIP, & centroVaccinalePorta);
     //--Creiamo il socket per la comunicazione con il centro Vaccinale
     centroVaccinaleSFD = wsocket(AF_INET, SOCK_STREAM, 0);
     memset((void *) & centroVaccinaleIndirizzo, 0, sizeof(centroVaccinaleIndirizzo));

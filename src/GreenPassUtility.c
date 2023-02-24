@@ -11,29 +11,29 @@ void checkCodiceTesseraSanitaria (char * codiceTesseraSanitaria) {
 
 /*--Questa funzione si occupa di acquisire la configurazione riportata nel file di configurazione passato come parametro,
 e di estrarre l'indirizzo IP e la porta del server.*/
-void ritornaDatiDiConfigurazione (const char * percorsoFileConfigurazione, char ** configurationIP, unsigned short int * configurationPort) {
+void getDatiDiConfigurazione (const char * percorsoFileConfigurazione, char ** IPConfigurazione, unsigned short int * portaConfigurazione) {
     FILE * filePointer;
-    size_t IPlength = 0, portLength = 0;
+    size_t lunghezzaIP = 0, lunghezzaPorta = 0;
     ssize_t getLineBytes;
-    char * tempStringConfigurationIP = NULL, * stringServerindirizzoPort = NULL;
+    char * tempStringIPConfigurazione = NULL, * stringIndirizzoPortaServer = NULL;
 
     //--Apriamo il file di configurazione passato come parametro
     filePointer = fopen(percorsoFileConfigurazione, "r");
     if (!filePointer) raiseError(FOPEN_SCOPE, FOPEN_ERROR);
-    if ((getLineBytes = getline((char ** restrict) & tempStringConfigurationIP, (size_t * restrict) & IPlength, (FILE * restrict) filePointer)) == -1)
+    if ((getLineBytes = getline((char ** restrict) & tempStringIPConfigurazione, (size_t * restrict) & lunghezzaIP, (FILE * restrict) filePointer)) == -1)
         raiseError(GETLINE_SCOPE, GETLINE_ERROR);
-    * configurationIP = (char *) calloc(strlen(tempStringConfigurationIP), sizeof(char));
-    if (! *configurationIP) raiseError(CALLOC_SCOPE, CALLOC_ERROR);
-    strncpy(* configurationIP, (const char *) tempStringConfigurationIP, strlen(tempStringConfigurationIP) - 1);
-    checkIP(* configurationIP);
-    if ((getLineBytes = getline((char ** restrict) & stringServerindirizzoPort, (size_t * restrict) & portLength, (FILE * restrict) filePointer)) == -1)
+    * IPConfigurazione = (char *) calloc(strlen(tempStringIPConfigurazione), sizeof(char));
+    if (! *IPConfigurazione) raiseError(CALLOC_SCOPE, CALLOC_ERROR);
+    strncpy(* IPConfigurazione, (const char *) tempStringIPConfigurazione, strlen(tempStringIPConfigurazione) - 1);
+    checkIP(* IPConfigurazione);
+    if ((getLineBytes = getline((char ** restrict) & stringIndirizzoPortaServer, (size_t * restrict) & lunghezzaPorta, (FILE * restrict) filePointer)) == -1)
         raiseError(GETLINE_SCOPE, GETLINE_ERROR);
-    * configurationPort = (unsigned short int) strtoul((const char * restrict) stringServerindirizzoPort, (char ** restrict) NULL, 10);
-    if (configurationPort == 0 && (errno == EINVAL || errno == ERANGE))
+    * portaConfigurazione = (unsigned short int) strtoul((const char * restrict) stringIndirizzoPortaServer, (char ** restrict) NULL, 10);
+    if (portaConfigurazione == 0 && (errno == EINVAL || errno == ERANGE))
         raiseError(STRTOUL_SCOPE, STRTOUL_ERROR);
     //--Deallochiamo i puntatori
-    free(tempStringConfigurationIP);
-    free(stringServerindirizzoPort);
+    free(tempStringIPConfigurazione);
+    free(stringIndirizzoPortaServer);
     //--Chiudiamo del file
     fclose(filePointer);
 }
@@ -42,17 +42,17 @@ void ritornaDatiDiConfigurazione (const char * percorsoFileConfigurazione, char 
 char * getdataScadenzaVaccino (void) {
     time_t systemTimeSeconds = time(NULL);
     //--Consideriamo la data di sistema attuale
-    struct tm * expirationDateTimeInfo = localtime((const time_t *) & systemTimeSeconds);
+    struct tm * infoDataDiScadenza = localtime((const time_t *) & systemTimeSeconds);
     
     //--Tronchiamo la data al primo giorno del mese
-    expirationDateTimeInfo->tm_mday = 1;
+    infoDataDiScadenza->tm_mday = 1;
     
     //--Aggiungiamo 6 mesi e si verifica se è cambiato l'anno
-    if (expirationDateTimeInfo->tm_mon + MESI_ATTESA_PROSSIMA_SOMMINISTRAZIONE + 1 > 11) {
-        expirationDateTimeInfo->tm_year += 1;
-        expirationDateTimeInfo->tm_mon = (expirationDateTimeInfo->tm_mon + MESI_ATTESA_PROSSIMA_SOMMINISTRAZIONE + 1) % MESI_IN_ANNO;
+    if (infoDataDiScadenza->tm_mon + MESI_ATTESA_PROSSIMA_SOMMINISTRAZIONE + 1 > 11) {
+        infoDataDiScadenza->tm_year += 1;
+        infoDataDiScadenza->tm_mon = (infoDataDiScadenza->tm_mon + MESI_ATTESA_PROSSIMA_SOMMINISTRAZIONE + 1) % MESI_IN_ANNO;
     } else {
-        expirationDateTimeInfo->tm_mon = (expirationDateTimeInfo->tm_mon + MESI_ATTESA_PROSSIMA_SOMMINISTRAZIONE + 1);
+        infoDataDiScadenza->tm_mon = (infoDataDiScadenza->tm_mon + MESI_ATTESA_PROSSIMA_SOMMINISTRAZIONE + 1);
     }
     
     //--Convertiamo in stringa della data e ritorno al chiamante
@@ -60,43 +60,44 @@ char * getdataScadenzaVaccino (void) {
 
     if (!dataScadenzaVaccino)
         raiseError(CALLOC_SCOPE, CALLOC_ERROR);
-    sprintf(dataScadenzaVaccino, "%02d-%02d-%d", expirationDateTimeInfo->tm_mday, expirationDateTimeInfo->tm_mon, expirationDateTimeInfo->tm_year + 1900);
+    sprintf(dataScadenzaVaccino, "%02d-%02d-%d", infoDataDiScadenza->tm_mday, infoDataDiScadenza->tm_mon, infoDataDiScadenza->tm_year + 1900);
     dataScadenzaVaccino[LUNGHEZZA_DATA - 1] = '\0';
     return dataScadenzaVaccino;
 }
 
 //--Questa procedura si occupa di calcolare e restutire la data attuale
-char * getNowDate (void) {
+char * getdataAttuale (void) {
     time_t tempTimeSeconds = time(NULL);
-    struct tm * nowDateTimeInfo = localtime((const time_t *) & tempTimeSeconds);
-    char * nowDate = (char *) calloc(LUNGHEZZA_DATA, sizeof(char));
+    struct tm * infoDataAttuale = localtime((const time_t *) & tempTimeSeconds);
+    char * dataAttuale = (char *) calloc(LUNGHEZZA_DATA, sizeof(char));
 
-    if (!nowDate)
+    if (!dataAttuale)
         raiseError(CALLOC_SCOPE, CALLOC_ERROR);
     
-    sprintf(nowDate, "%02d-%02d-%d", nowDateTimeInfo->tm_mday, nowDateTimeInfo->tm_mon + 1, nowDateTimeInfo->tm_year + 1900);
-    nowDate[LUNGHEZZA_DATA - 1] = '\0';
-    return nowDate;
+    sprintf(dataAttuale, "%02d-%02d-%d", infoDataAttuale->tm_mday, infoDataAttuale->tm_mon + 1, infoDataAttuale->tm_year + 1900);
+    dataAttuale[LUNGHEZZA_DATA - 1] = '\0';
+    return dataAttuale;
 }
 
-/*--Attraverso la seguente funzione possiamo ritornare il socket file descriptor di una connessione impostata col serverV.
+/*--Attraverso la seguente funzione possiamo getre il socket file descriptor di una connessione impostata col serverV.
 In input passiamo il file di configurazione che è stato fornito al CentroVaccinale o al ServerG per mettersi in contatto con il ServerV.*/
 int creaConnessioneConServerV (const char * percorsoFileConfigurazione) {
-    struct sockaddr_in serverV_indirizzo;
-    char * stringServerV_indirizzoIP = NULL;
-    unsigned short int serverV_Port;
+    struct sockaddr_in indirizzoServerV;
+    char * stringindirizzoServerVIP = NULL;
+    unsigned short int portaServerV;
     int serverV_SFD;
     
     //--Ritorno del file di configurazione
-    ritornaDatiDiConfigurazione(percorsoFileConfigurazione, & stringServerV_indirizzoIP, & serverV_Port);
-    //--Impostiamo la comunicazione col serverV
+    getDatiDiConfigurazione(percorsoFileConfigurazione, & stringindirizzoServerVIP, & portaServerV);
+    //--Impostiamo la comunicazione col serverV creando il socket
     serverV_SFD = wsocket(AF_INET, SOCK_STREAM, 0);
-    memset((void *) & serverV_indirizzo, 0, sizeof(serverV_indirizzo));
-    serverV_indirizzo.sin_family = AF_INET;
-    serverV_indirizzo.sin_port   = htons(serverV_Port);
-    if (inet_pton(AF_INET, (const char * restrict) stringServerV_indirizzoIP, (void *) & serverV_indirizzo.sin_addr) <= 0)
+    memset((void *) & indirizzoServerV, 0, sizeof(indirizzoServerV));
+    indirizzoServerV.sin_family = AF_INET;
+    indirizzoServerV.sin_port   = htons(portaServerV);
+    if (inet_pton(AF_INET, (const char * restrict) stringindirizzoServerVIP, (void *) & indirizzoServerV.sin_addr) <= 0)
         raiseError(INET_PTON_SCOPE, INET_PTON_ERROR);
-    wconnect(serverV_SFD, (struct sockaddr *) & serverV_indirizzo, (socklen_t) sizeof(serverV_indirizzo));
-    free(stringServerV_indirizzoIP);
+    wconnect(serverV_SFD, (struct sockaddr *) & indirizzoServerV, (socklen_t) sizeof(indirizzoServerV));
+
+    free(stringindirizzoServerVIP);
     return serverV_SFD;
 }

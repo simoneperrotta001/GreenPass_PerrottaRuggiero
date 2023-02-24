@@ -37,7 +37,7 @@ int setupClientT (int argc, char * argv[], char ** codiceTesseraSanitaria, int *
     if (! * codiceTesseraSanitaria)
         raiseError(CALLOC_SCOPE, CALLOC_ERROR);
     strncpy(* codiceTesseraSanitaria, (const char *) argv[1], LUNGHEZZA_CODICE_TESSERA_SANITARIA - 1);
-    ritornaDatiDiConfigurazione(percorsoFileConfigurazione, & stringServerG_IP, & serverGPorta);
+    getDatiDiConfigurazione(percorsoFileConfigurazione, & stringServerG_IP, & serverGPorta);
     //--Creiamo il socket per la comunicazione con ServerG
     serverG_SFD = wsocket(AF_INET, SOCK_STREAM, 0);
     memset((void *) & serverGIndrizzo, 0, sizeof(serverGIndrizzo));
