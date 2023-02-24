@@ -1,6 +1,6 @@
 #include "UsageUtility.h"
 
-//-- Questa procedura effettua un controllo dei parametri relativi ad ogni entità invocata
+//--Questa procedura effettua un controllo dei parametri relativi ad ogni entità invocata
 void checkUtilizzo (int argc, const char * argv[], int expected_argc, const char * messaggioAtteso) {
     if (argc != expected_argc) {
         if (fprintf(stderr, (const char * restrict) "Usage: %s %s\n", argv[0], messaggioAtteso) < 0) raiseError(FPRINTF_SCOPE, FPRINTF_ERROR);
@@ -9,16 +9,14 @@ void checkUtilizzo (int argc, const char * argv[], int expected_argc, const char
 }
 
 /*-- Questa procedura si occupa della gestione degli errori con la visualizzazione dello scope e di conseguenza
-  termina il processo.*/
+termina il processo.*/
 void raiseError (char * errorScope, int exitCode) {
     if (fprintf(stderr, (const char * restrict) "Scope: %s - Error #%d\n", errorScope, exitCode) < 0) raiseError(FPRINTF_SCOPE, FPRINTF_ERROR);
     exit(exitCode);
 }
 
-/*
--- Questa procedura si occupa della gestione degli errori con la visualizzazione dello scope e di conseguenza
-  termina il thread.
-*/
+/*--Questa procedura si occupa della gestione degli errori con la visualizzazione dello scope e di conseguenza
+termina il thread.*/
 void threadraiseError (char * errorScope, int exitCode) {
     if (fprintf(stderr, (const char * restrict)  "Scope: %s - Error #%d\n", errorScope, exitCode) < 0) raiseError(FPRINTF_SCOPE, FPRINTF_ERROR);
     pthread_exit(NULL);

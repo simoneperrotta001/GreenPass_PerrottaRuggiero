@@ -106,10 +106,10 @@
 
 enum boolean        { FALSE, TRUE };
 
-void        checkUtilizzo          (int argc,              const char * argv[],    int expected_argc, const char * messaggioAtteso);
-void        raiseError          (char * errorScope,     int exitCode                                                                );
-void        threadraiseError    (char * errorScope,     int exitCode                                                                );
-ssize_t     fullRead            (int fileDescriptor,    void * buffer,          size_t nBytes                                       );
-ssize_t     fullWrite           (int fileDescriptor,    const void * buffer,    size_t nBytes                                       );
+void checkUtilizzo    (int argc, const char * argv[], int expected_argc, const char * messaggioAtteso);
+void raiseError       (char * errorScope, int exitCode);
+void threadraiseError (char * errorScope, int exitCode);
+ssize_t fullRead  (int fileDescriptor, void * buffer, size_t nBytes);
+ssize_t fullWrite (int fileDescriptor, const void * buffer, size_t nBytes);
 
 #endif /* UsageUtility_h */
